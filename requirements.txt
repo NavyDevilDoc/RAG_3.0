@@ -1,0 +1,17 @@
+python-dotenv
+sentence-transformers
+langchain-community
+langchain-openai
+langchain-ollama
+langchain-core
+langchain-pinecone
+langchain
+pinecone-client
+pypdf
+spacy
+spacy download en_core_web_sm
+scikit-learn
+pdf2image
+numpy
+tiktoken
+pytesseract
