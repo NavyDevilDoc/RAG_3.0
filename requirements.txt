@@ -18,3 +18,4 @@ nltk
 matplotlib
 evaluate
 rouge_score
+docarray
