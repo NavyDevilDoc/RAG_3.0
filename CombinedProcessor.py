@@ -46,10 +46,35 @@ class CombinedProcessor:
         
     def process_and_store(self, source_path: Union[str, List[str]]) -> None:
         """Process and store documents based on configuration."""
+        
+        # Skip document processing for existing Pinecone index
+        if self.storage_type == StorageType.PINECONE_EXISTING:
+            print(f"\nConnecting to existing Pinecone index '{self.doc_name}'...")
+            try:
+                datastore_manager = DatastoreInitializer(
+                    doc_name=self.doc_name,
+                    pinecone_api_key=self.model_manager.get_pinecone_api_key(),
+                    dimensions=self.dimensions,
+                    embedding_model=self.embedding_model
+                )
+                
+                datastore = datastore_manager.setup_datastore(
+                    storage_type=self.storage_type,
+                    documents=None,
+                    embeddings=self.embeddings
+                )
+                
+                print(f"Successfully connected to existing index '{self.doc_name}'")
+                return datastore
+                
+            except Exception as e:
+                print(f"Error connecting to existing index: {e}")
+                sys.exit(1)
+        
+        # Process documents for new or additional storage
         paths = [source_path] if isinstance(source_path, str) else source_path
         all_documents = []
         
-        # Process documents
         for path in paths:
             processor = ChunkingInitializer(
                 source_path=path,
@@ -67,7 +92,7 @@ class CombinedProcessor:
                 print(f"Error processing {Path(path).name}: {e}")
                 continue
         
-        if not all_documents and self.storage_type != StorageType.PINECONE_EXISTING:
+        if not all_documents:
             print("No documents were successfully processed")
             return
             
@@ -80,18 +105,13 @@ class CombinedProcessor:
                 embedding_model=self.embedding_model
             )
             
-            documents = None if self.storage_type == StorageType.PINECONE_EXISTING else all_documents
-            
             datastore = datastore_manager.setup_datastore(
                 storage_type=self.storage_type,
-                documents=documents,
+                documents=all_documents,
                 embeddings=self.embeddings
             )
             
-            if documents:
-                print(f"\nSuccessfully stored {len(all_documents)} chunks in '{self.doc_name}'")
-            else:
-                print(f"\nSuccessfully connected to existing index '{self.doc_name}'")
+            print(f"\nSuccessfully stored {len(all_documents)} chunks in '{self.doc_name}'")
                 
         except Exception as e:
             print(f"Error storing documents: {e}")
