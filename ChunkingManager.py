@@ -1,19 +1,22 @@
-# ChunkingManager provides document processing functionality for splitting and analyzing text content either by semantic similarity or page boundaries.
+# ChunkingManager.py 
 
-from typing import List, Dict, Any, Optional, Tuple
+"""
+ChunkingManager.py
+A module for managing different document chunking strategies.
+
+This module provides functionality to:
+- Process documents using different chunking methods
+- Support semantic and page-based chunking
+- Handle preprocessing and OCR integration
+"""
+
+from typing import List, Any
 from langchain_core.documents import Document
 from SemanticChunker import SemanticChunker
 from PageChunker import PageChunker
 from OCREnhancedPDFLoader import OCREnhancedPDFLoader
 from TextPreprocessor import TextPreprocessor
 from ChunkingMethod import ChunkingMethod
-from langchain.text_splitter import SpacyTextSplitter
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-import tiktoken
-import spacy
-import numpy as np
-from transformers import AutoTokenizer
 
 
 def process_document(
@@ -27,6 +30,35 @@ def process_document(
     model_name = None,
     embedding_model=None
 ) -> List[Document]:
+
+    """
+    Process documents using specified chunking method.
+
+    Args:
+        source_path (str): Path to source document
+        method (ChunkingMethod): Chunking strategy to use
+        enable_preprocessing (bool): Whether to preprocess text
+        chunk_size (int): Size of text chunks
+        chunk_overlap (int): Overlap between chunks
+        similarity_threshold (float): Threshold for semantic similarity
+        max_tokens (int): Maximum tokens per chunk
+        model_name (Optional[str]): Name of language model
+        embedding_model (Optional[Any]): Model for embeddings
+
+    Returns:
+        List[Document]: Processed document chunks
+
+    Raises:
+        ValueError: If embedding model is missing or method invalid
+        RuntimeError: If document processing fails
+
+    Example:
+        >>> chunks = process_document(
+        ...     "doc.pdf",
+        ...     ChunkingMethod.SEMANTIC,
+        ...     embedding_model=embeddings
+        ... )
+    """
 
     if embedding_model is None:
         raise ValueError("Embedding model must be provided.")
@@ -58,6 +90,23 @@ def _semantic_chunking(
     similarity_threshold: float,
 ) -> List[Document]:
 
+    """
+    Process document using semantic chunking strategy.
+
+    Args:
+        source_path (str): Path to source document
+        enable_preprocessing (bool): Whether to preprocess text
+        chunk_size (int): Size of chunks
+        chunk_overlap (int): Overlap between chunks
+        similarity_threshold (float): Semantic similarity threshold
+
+    Returns:
+        List[Document]: Semantically chunked documents
+
+    Raises:
+        Exception: If semantic chunking fails
+    """
+
     print("Performing semantic chunking...")
     semantic_chunker = SemanticChunker(
         chunk_size=chunk_size,
@@ -83,7 +132,44 @@ def _semantic_chunking(
     return documents
 
 
-def _page_chunking(source_path: str, preprocess: bool, model_name: str, embedding_model) -> List[Document]:
+def _page_chunking(
+        source_path: str, 
+        preprocess: bool, 
+        model_name: str, 
+        embedding_model: Any
+        ) -> List[Document]:
+
+    """
+    Process document using page-based chunking strategy.
+
+    This method:
+    1. Splits document by pages
+    2. Optionally preprocesses text
+    3. Calculates token counts per page
+    4. Applies embeddings for retrieval
+
+    Args:
+        source_path (str): Path to source document
+        preprocess (bool): Whether to preprocess text
+        model_name (str): Name of language model
+        embedding_model (Any): Model for generating embeddings
+
+    Returns:
+        List[Document]: List of page-chunked documents with metadata
+
+    Raises:
+        ValueError: If document or model parameters are invalid
+        RuntimeError: If chunking process fails
+
+    Example:
+        >>> chunks = _page_chunking(
+        ...     "doc.pdf",
+        ...     preprocess=True,
+        ...     model_name="gpt-3.5-turbo",
+        ...     embedding_model=embeddings
+        ... )
+        >>> print(f"Processed {len(chunks)} pages")
+    """
 
     print("Processing document by pages...")
     # Pass the pre-initialized embedding model to PageChunker
@@ -96,250 +182,3 @@ def _page_chunking(source_path: str, preprocess: bool, model_name: str, embeddin
         print(f"Page {doc.metadata['page']}: {doc.metadata['token_count']} tokens")
     
     return documents
-
-# SemanticChunker segments documents into chunks that balance semantic coherence with size constraints.
-# Processes documents for semantic search and analysis tasks, combining similarity-based merging with size enforcement.
-
-class SemanticChunker:
-    def __init__(self, chunk_size=200, chunk_overlap=0, similarity_threshold=0.9, separator=" ", sentence_model=None):
-        """Initialize the semantic chunker with configurable parameters.
-
-        Args:
-            chunk_size (int): Maximum size of each chunk in characters.
-            chunk_overlap (int): Number of overlapping characters between chunks.
-            similarity_threshold (float): Minimum cosine similarity score (0-1) to combine chunks.
-            separator (str): Character used to separate chunks.
-            sentence_model: Optional embedding model for similarity calculations.
-        
-        Raises:
-            ValueError: If any initialization parameter is invalid.
-        """
-        if chunk_size <= 0:
-            raise ValueError("chunk_size must be a positive integer.")
-        if not (0 <= similarity_threshold <= 1):
-            raise ValueError("similarity_threshold must be between 0 and 1.")
-        
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
-        self.similarity_threshold = similarity_threshold
-        self.separator = separator
-        self.sentence_model = sentence_model or SentenceTransformer('multi-qa-mpnet-base-dot-v1')  # Default model for flexibility
-        self.text_splitter = SpacyTextSplitter(
-            chunk_size=self.chunk_size - self.chunk_overlap,
-            chunk_overlap=self.chunk_overlap,
-            separator=self.separator 
-        )
-
-    def _enforce_size_immediately(self, text):
-        if not text.strip():
-            raise ValueError("Input 'text' cannot be empty or whitespace.")
-
-        chunks, current_chunk = [], []
-        words = text.split()
-
-        for word in words:
-            # Check if adding word would exceed size limit (including spaces)
-            if sum(len(w) for w in current_chunk) + len(word) + len(current_chunk) <= self.chunk_size:
-                current_chunk.append(word)
-            else:
-                # Save current chunk and start a new one
-                chunks.append(" ".join(current_chunk))
-                current_chunk = [word]
-
-        # Add final chunk if it exists
-        if current_chunk:
-            chunks.append(" ".join(current_chunk))
-
-        return chunks
-
-    def get_semantic_chunks(self, documents):
-
-        # Initial document splitting
-        base_chunks = self.text_splitter.split_documents(documents)
-        
-        # Generate embeddings for semantic comparison
-        chunk_embeddings = self.sentence_model.encode([doc.page_content for doc in base_chunks])
-        grouped_chunks, current_group = [], []
-
-        for i, base_chunk in enumerate(base_chunks):
-            if not current_group:
-                current_group.append(base_chunk)
-                current_embedding = chunk_embeddings[i].reshape(1, -1)
-                continue
-
-            # Step 3: Calculate similarity and combine if appropriate
-            similarity = cosine_similarity(current_embedding, chunk_embeddings[i].reshape(1, -1))[0][0]
-            combined_content = " ".join([doc.page_content for doc in current_group] + [base_chunk.page_content])
-
-            if similarity >= self.similarity_threshold and len(combined_content) <= self.chunk_size:
-                current_group.append(base_chunk)
-            else:
-                # Process current group and start a new one
-                grouped_chunks.extend(self._finalize_chunk_group(current_group))
-                current_group = [base_chunk]
-                current_embedding = chunk_embeddings[i].reshape(1, -1)
-
-        # Finalize any remaining chunks
-        if current_group:
-            grouped_chunks.extend(self._finalize_chunk_group(current_group))
-
-        return grouped_chunks
-
-    def _finalize_chunk_group(self, group):
-
-        processed_chunks = []
-        content = " ".join([doc.page_content for doc in group])
-        size_limited_chunks = self._enforce_size_immediately(content)
-        
-        for chunk in size_limited_chunks:
-            processed_chunks.append(Document(page_content=chunk, metadata=group[0].metadata))
-        
-        return processed_chunks
-
-
-
-# PageChunker provides page-level document processing with token counting, embedding generation,
-# and detailed page analysis. Skips blank pages, optionally preprocesses text, and maintains document structure.
-
-# Load language model for semantic analysis using spaCy.
-# This model performs core NLP tasks such as tokenization, lemmatization, and entity recognition.
-nlp = spacy.load("en_core_web_sm")
-
-class PageChunker:
-    BLANK_THRESHOLD = 10  # Minimum character count to consider a page non-blank
-
-    def __init__(self, model_name=None, embedding_model=None):
-
-        self.model_name = model_name
-        self.uses_tiktoken = False  # Default to False
-        self.uses_basic_tokenizer = False  # Flag for Ollama models
-
-        # List of models supported by tiktoken
-        tiktoken_supported_models = [
-            "gpt-3.5-turbo", "gpt-4", "text-davinci-003", "gpt-4o", "text-embedding-ada-002", "text-embedding-3-large"
-        ]
-
-        try:
-            if model_name in tiktoken_supported_models:
-                # Use tiktoken if the model is supported
-                self.tokenizer = tiktoken.encoding_for_model(model_name)
-                self.uses_tiktoken = True
-            elif "mistral" in model_name or "llama" in model_name:
-                # Handle Ollama models with a basic tokenizer
-                self.uses_basic_tokenizer = True
-            else:
-                # Fall back to transformers tokenizer for supported Hugging Face models
-                self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-                self.uses_tiktoken = False
-
-            # Check if embedding model is provided
-            if embedding_model is None:
-                raise ValueError("Embedding model must be provided.")
-            self.embedding_model = embedding_model
-
-        except Exception as e:
-            raise ValueError(f"Error initializing PageChunker with '{model_name}': {e}")
-        self.page_stats = []
-
-
-    def _is_blank_page(self, text: str) -> bool:
-        cleaned_text = text.strip().replace('\n', '').replace('\r', '').replace('\t', '')
-        return len(cleaned_text) < self.BLANK_THRESHOLD
-
-    def _count_tokens(self, text: str) -> int:
-        try:
-            if self.uses_tiktoken:
-                # Use tiktoken to count tokens
-                return len(self.tokenizer.encode(text))
-            elif self.uses_basic_tokenizer:
-                # Basic token counting for Ollama models
-                return len(text.split())
-            else:
-                # Use transformers tokenizer for supported Hugging Face models
-                return len(self.tokenizer.tokenize(text))
-        except Exception as e:
-            print(f"Error counting tokens in text '{text[:30]}...': {e}")
-            return 0
-
-
-    def _get_page_embedding(self, text: str) -> Optional[np.ndarray]:
-
-        if not text.strip():
-            return None
-
-        try:
-            return self.embedding_model.encode(text)
-        except Exception as e:
-            print(f"Error generating embedding for text '{text[:30]}...': {e}")
-            return None
-        
-        
-    def _analyze_page(self, text: str) -> dict:
-
-        try:
-            embedding = self._get_page_embedding(text)
-            return {
-                "char_count": len(text),
-                "token_count": self._count_tokens(text),
-                "sentence_count": len(list(nlp(text).sents)),
-                "word_count": len(text.split()),
-                "embedding_dim": len(embedding) if embedding is not None else 0,
-                "has_ocr": bool(text.strip())
-            }
-        except Exception as e:
-            print(f"Error analyzing page: {e}")
-            return {
-                "char_count": 0,
-                "token_count": 0,
-                "sentence_count": 0,
-                "word_count": 0,
-                "embedding_dim": 0,
-                "has_ocr": False
-            }
-
-    def _process_single_page(self, content: str, page_number: int, preprocess: bool) -> Optional[Document]:
-
-        if self._is_blank_page(content):
-            self.page_stats.append(f"Page {page_number} is blank.")
-            return None
-
-        # Optionally preprocess the text
-        if preprocess:
-            text_preprocessor = TextPreprocessor()
-            content = text_preprocessor.preprocess(content)
-        
-        # Analyze the page and generate metadata
-        stats = self._analyze_page(content)
-        metadata = {
-            "page": page_number,
-            "char_count": stats["char_count"],
-            "token_count": stats["token_count"],
-            "sentence_count": stats["sentence_count"],
-            "word_count": stats["word_count"],
-            "has_ocr": str(stats["has_ocr"]),
-            "is_blank": "false"
-        }
-        
-        return Document(page_content=content, metadata=metadata)
-
-    def process_document(self, file_path: str, preprocess: bool = False) -> List[Document]:
-
-        try:
-            loader = OCREnhancedPDFLoader(file_path)
-            raw_pages = loader.load()
-            processed_pages = []
-
-            for idx, page in enumerate(raw_pages):
-                processed_page = self._process_single_page(page.page_content, idx + 1, preprocess)
-                if processed_page:
-                    processed_pages.append(processed_page)
-
-            # Output skipped pages for transparency
-            if self.page_stats:
-                print("\n".join(self.page_stats))
-
-            return processed_pages
-            
-        except Exception as e:
-            print(f"Error in process_document: {e}")
-            raise

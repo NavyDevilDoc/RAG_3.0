@@ -1,4 +1,13 @@
 # CombinedProcessor.py
+
+"""
+CombinedProcessor.py
+A module for processing and storing documents with embeddings in vector databases.
+
+Classes:
+    CombinedProcessor: Handles document processing and storage with various RAG components.
+"""
+
 from typing import Union, List, Any
 from pathlib import Path
 import sys
@@ -10,6 +19,40 @@ from DatastoreInitializer import DatastoreInitializer, StorageType
 
 
 class CombinedProcessor:
+
+    """
+    A class that combines document processing, chunking, and vector storage operations.
+
+    This class handles the end-to-end process of:
+    1. Document ingestion
+    2. Text chunking
+    3. Embedding generation
+    4. Vector storage management
+
+    Attributes:
+        doc_name (str): Unique identifier for the document index
+        model_manager (ModelManager): Handles API key management
+        embedding_model (str): Name of the embedding model to use
+        embeddings (Any): Instance of the embedding model
+        dimensions (int): Dimension size of the embeddings
+        chunking_method (ChunkingMethod): Method for splitting documents
+        enable_preprocessing (bool): Flag for text preprocessing
+        storage_type (StorageType): Type of vector storage to use
+        model_name (str): Name of the language model for processing
+
+    Example:
+        >>> from ModelManager import ModelManager
+        >>> model_mgr = ModelManager()
+        >>> processor = CombinedProcessor(
+        ...     doc_name="my_docs",
+        ...     model_manager=model_mgr,
+        ...     embedding_model="text-embedding-ada-002",
+        ...     embeddings=embeddings_instance,
+        ...     dimensions=1536
+        ... )
+        >>> processor.process_and_store("path/to/documents")
+    """
+
     def __init__(self, 
                  doc_name: str,
                  model_manager: ModelManager,  # Changed parameter name to match usage
@@ -45,7 +88,29 @@ class CombinedProcessor:
         self.model_name = model_name
         
     def process_and_store(self, source_path: Union[str, List[str]]) -> None:
-        """Process and store documents based on configuration."""
+        """
+        Process documents and store them in the vector database.
+
+        This method handles:
+        1. Connecting to existing storage (if specified)
+        2. Processing new documents
+        3. Storing document chunks with embeddings
+
+        Args:
+            source_path (Union[str, List[str]]): Path(s) to document(s) to process.
+                Can be a single string path or list of paths.
+
+        Returns:
+            Optional[Any]: The initialized datastore object if successful, None otherwise.
+
+        Raises:
+            SystemExit: If critical errors occur during processing or storage
+            Exception: For document processing or storage errors
+
+        Example:
+            >>> processor = CombinedProcessor(...)
+            >>> datastore = processor.process_and_store("documents/file.pdf")
+        """
         
         # Skip document processing for existing Pinecone index
         if self.storage_type == StorageType.PINECONE_EXISTING:

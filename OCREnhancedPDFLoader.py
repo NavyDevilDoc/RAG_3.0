@@ -1,5 +1,16 @@
-# OCREnhancedPDFLoader combines standard PDF text extraction with OCR for enhanced processing.
-# Detects and skips blank pages, preserving document structure and metadata.
+# OCREnhancedPDFLoader.py
+
+"""
+OCREnhancedPDFLoader.py
+
+A module for loading PDFs with OCR (Optical Character Recognition) support.
+
+Features:
+- PDF loading with OCR fallback
+- Image text extraction
+- Multiple page handling
+- Text quality optimization
+"""
 
 import os
 import pytesseract
@@ -8,6 +19,25 @@ from langchain_core.documents import Document
 from pdf2image import convert_from_path
 
 class OCREnhancedPDFLoader:
+    """
+    Loads PDFs with OCR support for text extraction.
+
+    Features:
+    1. Native PDF text extraction
+    2. OCR fallback for scanned documents
+    3. Multi-page handling
+    4. Image preprocessing
+
+    Attributes:
+        file_path (str): Path to PDF file
+        ocr_languages (str): Languages for OCR
+        dpi (int): DPI for image conversion
+        use_ocr_always (bool): Force OCR usage
+
+    Example:
+        >>> loader = OCREnhancedPDFLoader("doc.pdf")
+        >>> documents = loader.load()
+    """
     BLANK_THRESHOLD = 10  # Minimum character count to consider a page non-blank
 
     def __init__(self, file_path: str, tesseract_path: str = r"C:\Program Files\Tesseract-OCR\tesseract.exe"):
@@ -32,6 +62,7 @@ class OCREnhancedPDFLoader:
             raise ValueError(f"Tesseract executable not found at path: {tesseract_path}")
         pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
+
     def _is_blank_page(self, text: str) -> bool:
         """Check if page is blank or contains only whitespace/special characters.
         
@@ -45,6 +76,7 @@ class OCREnhancedPDFLoader:
             return True
         cleaned_text = text.strip().replace('\n', '').replace('\r', '').replace('\t', '')
         return len(cleaned_text) < self.BLANK_THRESHOLD
+
 
     def _process_page(self, doc, img, page_number: int):
         """Process a single page by combining standard extracted text with OCR.
@@ -84,6 +116,7 @@ class OCREnhancedPDFLoader:
                 "has_ocr": "true"
             }
         )
+
 
     def load(self):
         """Load and process PDF file with OCR enhancement.

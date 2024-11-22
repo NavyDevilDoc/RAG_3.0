@@ -1,5 +1,17 @@
-# PageChunker provides page-level document processing with token counting, embedding generation,
-# and detailed page analysis. Skips blank pages, optionally preprocesses text, and maintains document structure.
+# PageChunker.py
+
+"""
+PageChunker.py
+
+A module for page-level document chunking with token counting and preprocessing.
+
+Features:
+- Page-based document splitting
+- Multiple tokenizer support (tiktoken, HuggingFace, basic)
+- Token counting and validation
+- Blank page detection
+- OCR integration
+"""
 
 from transformers import AutoTokenizer
 import tiktoken
@@ -13,17 +25,49 @@ from TextPreprocessor import TextPreprocessor
 nlp = spacy.load("en_core_web_sm")
 
 class PageChunker:
+
+    """
+    Handles document chunking at the page level with token counting.
+
+    Features:
+    1. Multiple tokenizer support
+    2. Page-level processing
+    3. Token count validation
+    4. Blank page detection
+    5. OCR integration
+
+    Attributes:
+        BLANK_THRESHOLD (int): Minimum characters for non-blank page
+        model_name (str): Name of language model
+        tokenizer (Any): Tokenizer instance
+        uses_tiktoken (bool): Whether using tiktoken
+        uses_basic_tokenizer (bool): Whether using basic tokenizer
+        embedding_model (Any): Model for embeddings
+
+    Example:
+        >>> chunker = PageChunker(
+        ...     model_name="gpt-3.5-turbo",
+        ...     embedding_model=embeddings
+        ... )
+        >>> chunks = chunker.process_document("doc.pdf")
+    """
+
     BLANK_THRESHOLD = 10  # Minimum character count to consider a page non-blank
 
     def __init__(self, model_name=None, embedding_model=None):
-        """Initialize the page chunker with specified language model and embedding model.
+        """
+        Initialize page chunker with specified models.
         
         Args:
-            model_name (str): Name of the language model for tokenization.
-            embedding_model: An initialized embedding model instance (e.g., OpenAIEmbeddings or SentenceTransformer).
-        
+            model_name (Optional[str]): Name of language model
+            embedding_model (Optional[Any]): Embedding model instance
+
         Raises:
-            ValueError: If model_name is invalid or embedding_model is not provided.
+            ValueError: If model configuration is invalid
+            RuntimeError: If tokenizer initialization fails
+
+        Example:
+            >>> chunker = PageChunker("gpt-3.5-turbo", openai_embeddings)
         """
         self.model_name = model_name
         self.uses_tiktoken = False  # Default to False
