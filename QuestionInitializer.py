@@ -1,4 +1,4 @@
-# QuestionInitializer.py (Test)
+# QuestionInitializer.py
 from typing import List, Dict, Optional, Any
 import time
 from ScoringMetric import ScoringMetric
@@ -49,7 +49,7 @@ class QuestionInitializer:
     def process_questions(self,
                          questions: List[str],
                          use_ground_truth: bool = False,
-                         template_name: str = "default") -> float:
+                         template_name: str = "default") -> List[Dict]:
         """Process questions through pipeline and return execution time."""
         try:
             # Load template and ground truth
@@ -62,15 +62,15 @@ class QuestionInitializer:
                 self.model,
                 template,
                 self.scoring_metric,
-                embeddings = self.embedding_model
+                self.embedding_model
             )
             
             # Process questions and measure time
             start_time = time.time()
-            pipeline.answer_questions(questions, ground_truth)
+            results = pipeline.answer_questions(questions, ground_truth)
             processing_time = time.time() - start_time
             
-            return processing_time
+            return results, processing_time
             
         except Exception as e:
             raise RuntimeError(f"Failed to process questions: {e}")

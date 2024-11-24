@@ -7,15 +7,11 @@ langchain-core
 langchain-pinecone
 langchain
 pinecone-client
-pymupdf
+pypdf
 spacy
 scikit-learn
 pdf2image
 numpy
 tiktoken
 pytesseract
-nltk
-matplotlib
-evaluate
-rouge_score
 docarray

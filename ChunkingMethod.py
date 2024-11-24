@@ -11,3 +11,4 @@ class ChunkingMethod(Enum):
     """
     SEMANTIC = "semantic"
     PAGE = "page"
+    HIERARCHICAL = "hierarchical" 

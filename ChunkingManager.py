@@ -14,6 +14,7 @@ from typing import List, Any
 from langchain_core.documents import Document
 from SemanticChunker import SemanticChunker
 from PageChunker import PageChunker
+from HierarchicalChunker import HierarchicalChunker
 from OCREnhancedPDFLoader import OCREnhancedPDFLoader
 from TextPreprocessor import TextPreprocessor
 from ChunkingMethod import ChunkingMethod
@@ -73,7 +74,21 @@ def process_document(
                 similarity_threshold,
             )
         elif method == ChunkingMethod.PAGE:
-            return _page_chunking(source_path, enable_preprocessing, model_name, embedding_model)
+            return _page_chunking(source_path, 
+                                  enable_preprocessing, 
+                                  model_name, 
+                                  embedding_model)
+        
+        elif method == ChunkingMethod.HIERARCHICAL:
+            return _hierarchical_chunking(
+                source_path,
+                enable_preprocessing,
+                chunk_size,
+                chunk_overlap,
+                similarity_threshold,
+                model_name,
+                embedding_model
+            )
         else:
             raise ValueError(f"Unsupported chunking method: {method}")
 
@@ -181,4 +196,33 @@ def _page_chunking(
     for doc in documents:
         print(f"Page {doc.metadata['page']}: {doc.metadata['token_count']} tokens")
     
+    return documents
+
+def _hierarchical_chunking(
+    source_path: str,
+    enable_preprocessing: bool,
+    chunk_size: int,
+    chunk_overlap: int,
+    similarity_threshold: float,
+    model_name: str,
+    embedding_model: Any
+) -> List[Document]:
+    """Process document using hierarchical chunking strategy."""
+    print("Performing hierarchical chunking...")
+    hierarchical_chunker = HierarchicalChunker(
+        model_name=model_name,
+        embedding_model=embedding_model,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        similarity_threshold=similarity_threshold
+    )
+    
+    result = hierarchical_chunker.process_document(
+        source_path, 
+        preprocess=enable_preprocessing
+    )
+    
+    # Flatten hierarchical structure for compatibility
+    documents = result["pages"] + result["chunks"]
+    print(f"Processed {len(result['pages'])} pages and {len(result['chunks'])} chunks")
     return documents

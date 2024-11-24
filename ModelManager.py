@@ -43,7 +43,8 @@ class ModelManager:
         >>> llm = manager.initialize_llm("gpt-4")
     """
 
-    def __init__(self, env_path: str):
+
+    def __init__(self, env_path: str, mode: str= 'rag'):
         """
         Initialize ModelManager with environment variables.
 
@@ -52,10 +53,13 @@ class ModelManager:
 
         Raises:
             SystemExit: If required environment variables are missing
-        """        
+        """
+        self.mode = mode.lower()
         self.load_environment_variables(env_path)
         self.llm_choices = self.define_llm_choices()
         self.embedding_choices = self.define_embedding_choices()
+        self.llm_type = None
+
 
     def load_environment_variables(self, env_path: str) -> None:
         """
@@ -78,6 +82,7 @@ class ModelManager:
             print("Error: Missing environment variables. Check the .env file.")
             sys.exit(1)
 
+
     def get_pinecone_api_key(self) -> str:
         """
         Retrieve Pinecone API key.
@@ -87,9 +92,11 @@ class ModelManager:
         """
         return self.pinecone_api_key
 
+
     def get_openai_api_key(self) -> str:
         """Retrieve the OpenAI API key."""
         return self.openai_api_key
+
 
     def define_llm_choices(self) -> Dict[str, Any]:
         """
@@ -103,13 +110,14 @@ class ModelManager:
             >>> print(choices["gpt"])  # "gpt-4o"
         """
         return {
-            "gpt": "gpt-4o",
-            "ollama": [
+            "GPT": "gpt-4o",
+            "OLLAMA": [
                 "llama3.1:8b-instruct-q5_K_M",
                 "llama3.2:latest",
                 "mistral-nemo:12b-instruct-2407-q5_K_M"
             ]
         }
+
 
     def define_embedding_choices(self) -> Dict[str, List[str]]:
         """
@@ -123,17 +131,17 @@ class ModelManager:
             >>> print(choices["openai"])  # ["text-embedding-ada-002"]
         """
         return {
-            "ollama": [
+            "OLLAMA": [
                 "nomic-embed-text",
                 "mxbai-embed-large",
                 "all-minilm",
                 "snowflake-arctic-embed"
             ],
-            "gpt": [
+            "GPT": [
                 "text-embedding-3-small",
                 "text-embedding-3-large",
             ],
-            "sentence_transformer": [
+            "SENTENCE_TRANSFORMER": [
                 "all-MiniLM-L6-v2",
                 "all-MiniLM-L12-v2",
                 "all-mpnet-base-v2",
@@ -143,44 +151,25 @@ class ModelManager:
         }
 
 
-    def validate_selection(self, selection: str, choices: List[str]) -> None:
-        """
-        Validate model selection against available choices.
-
-        Args:
-            selection (str): Selected model type
-            valid_choices (List[str]): List of valid options
-
-        Raises:
-            ValueError: If selection is invalid
-
-        Example:
-            >>> manager.validate_selection("gpt", ["gpt", "ollama"])
-        """
-        if selection not in choices:
-            raise ValueError(f"Invalid selection: {selection}. Available choices are: {choices}")
+    def validate_selection(self, selection: str, valid_choices: List[str]) -> None:
+        """Validate model selection with case-insensitive matching."""
+        selection_upper = selection.upper()
+        valid_choices_upper = [choice.upper() for choice in valid_choices]
+        if selection_upper not in valid_choices_upper:
+            raise ValueError(
+                f"Invalid selection: {selection}. "
+                f"Available choices are: {valid_choices}"
+            )
 
 
-    def load_model(self, selected_llm_type: str, selected_llm: str, resource_manager) -> Any:
-        """
-        Load and configure language model.
-
-        Args:
-            model_type (str): Type of model (e.g., "gpt", "ollama")
-            model_name (str): Specific model name
-            resource_manager (Any): Resource manager instance
-
-        Returns:
-            Any: Configured language model
-
-        Raises:
-            RuntimeError: If model loading fails
-
-        Example:
-            >>> model = manager.load_model("gpt", "gpt-4", resource_mgr)
-        """
+    def load_model(self, selected_llm_type: str, selected_llm: str, resource_manager: Dict) -> Any:
+        """Load and configure language model."""
         try:
-            if selected_llm_type == "gpt":
+            # Store normalized LLM type for embedding validation
+            self.llm_type = selected_llm_type.upper()
+            
+            # Case insensitive comparison
+            if selected_llm_type.lower() == "gpt":
                 return ChatOpenAI(openai_api_key=self.openai_api_key)
             else:
                 return ChatOllama(model=selected_llm, **resource_manager)
@@ -189,33 +178,27 @@ class ModelManager:
             sys.exit(1)
 
 
-    def load_embeddings(self, selected_embedding_scheme: str, selected_embedding_model: str) -> Any:
-        """
-        Load and configure embedding model.
-
-        Args:
-            embedding_type (str): Type of embeddings
-            model_name (str): Name of embedding model
-
-        Returns:
-            Any: Configured embedding model
-
-        Raises:
-            RuntimeError: If embedding loading fails
-
-        Example:
-            >>> embeddings = manager.load_embeddings("openai", "ada-002")
-        """
+    def load_embeddings(self, embedding_type: str, model_name: str) -> Any:
+        """Load and configure embedding model with type validation."""
         try:
-            if selected_embedding_scheme == "gpt":
+            embedding_type = embedding_type.upper()
+            
+            # Only enforce GPT-GPT pairing in LLM mode
+            if self.mode == 'llm' and self.llm_type == 'GPT' and embedding_type != 'GPT':
+                raise ValueError("GPT models require GPT embeddings in LLM mode")
+            
+            if embedding_type == 'GPT':
                 return OpenAIEmbeddings(
-                    openai_api_key=self.openai_api_key, 
-                    model=selected_embedding_model
+                    model=model_name,
+                    openai_api_key=self.openai_api_key
                 )
-            elif selected_embedding_scheme == "ollama":
-                return OllamaEmbeddings(model=selected_embedding_model)
+            elif embedding_type == 'OLLAMA':
+                return OllamaEmbeddings(model=model_name)
+            elif embedding_type == 'SENTENCE_TRANSFORMER':
+                return SentenceTransformerEmbeddings(model_name=model_name)
             else:
-                return SentenceTransformerEmbeddings(selected_embedding_model)
+                raise ValueError(f"Unsupported embedding type: {embedding_type}")
+                
         except Exception as e:
             print(f"Error loading embeddings: {e}")
             sys.exit(1)
@@ -247,48 +230,38 @@ class ModelManager:
             sys.exit(1)
 
 
-    def validate_and_load_models(
-        self, config: Dict[str, str], select_llm: int, select_embed: int, resource_manager: Any
-    ) -> tuple:
-        """
-        Validate and load selected language and embedding models.
-
-        Args:
-            config (Dict[str, str]): Model configuration
-            select_llm (int): LLM selection index
-            select_embed (int): Embedding selection index
-            resource_manager (Any): Resource manager instance
-
-        Returns:
-            tuple: (
-                model: Language model instance,
-                embeddings: Embedding model instance,
-                dimensions: Embedding dimensions,
-                selected_llm: Selected LLM name,
-                selected_embedding_model: Selected embedding model name
+    def validate_and_load_models(self, config: Dict[str, str], select_llm: int, select_embed: int, resource_manager: Any):
+        """Validate and load selected models."""
+        try:
+            # Normalize config keys
+            normalized_config = {
+                key.upper(): value.upper() 
+                for key, value in config.items()
+            }
+            
+            # Get model selections
+            selected_llm = self.llm_choices[normalized_config["SELECTED_LLM_TYPE"]][select_llm]
+            selected_embedding_model = self.embedding_choices[normalized_config["SELECTED_EMBEDDING_SCHEME"]][select_embed]
+            
+            # Load models
+            model = self.load_model(
+                normalized_config["SELECTED_LLM_TYPE"], 
+                selected_llm, 
+                resource_manager
             )
-
-        Raises:
-            ValueError: If selections are invalid
-            RuntimeError: If model loading fails
-
-        Example:
-            >>> model, emb, dims, llm, emb_model = manager.validate_and_load_models(
-            ...     config, 0, 0, resource_mgr
-            ... )
-        """
-        self.validate_selection(config["selected_llm_type"], self.llm_choices.keys())
-        self.validate_selection(config["selected_embedding_scheme"], self.embedding_choices.keys())
-
-        selected_llm = (
-            self.llm_choices[config["selected_llm_type"]]
-            if config["selected_llm_type"] == "gpt"
-            else self.llm_choices[config["selected_llm_type"]][select_llm]
-        )
-        selected_embedding_model = self.embedding_choices[config["selected_embedding_scheme"]][select_embed]
-
-        model = self.load_model(config["selected_llm_type"], selected_llm, resource_manager)
-        embeddings = self.load_embeddings(config["selected_embedding_scheme"], selected_embedding_model)
-        dimensions = self.determine_embedding_dimensions(embeddings)
-
-        return model, embeddings, dimensions, selected_llm, selected_embedding_model
+            embeddings = self.load_embeddings(
+                normalized_config["SELECTED_EMBEDDING_SCHEME"], 
+                selected_embedding_model
+            )
+            
+            # Get dimensions
+            dimensions = self.determine_embedding_dimensions(embeddings)
+            
+            # Return all 5 expected values
+            return model, embeddings, dimensions, selected_llm, selected_embedding_model
+            
+        except KeyError as e:
+            print(f"Model selection error: {e}")
+            print(f"Available LLM types: {list(self.llm_choices.keys())}")
+            print(f"Available embedding types: {list(self.embedding_choices.keys())}")
+            raise
