@@ -168,6 +168,7 @@ class Driver:
                 return []
                 
             responses = []
+            text_processor = TextPreprocessor()
             # Map each result to its corresponding question
             for question, result in zip(questions, results):
                 if not isinstance(result, dict):
@@ -188,6 +189,8 @@ class Driver:
                             'quality_scores': result.get('quality_scores', {})
                         }
                     )
+                    # Add token count to the answer
+                    response.answer += f"\n\nToken Count: {text_processor.count_tokens(response.answer)}"
                     responses.append(response)
                 except KeyError as e:
                     print(f"Warning: Missing required field in result: {e}")
@@ -207,13 +210,16 @@ class Driver:
             if not self.llm_query:
                 raise RuntimeError("LLM mode not initialized")
             response = self.llm_query.ask(query)
-            return text_processor.format_text(response)
+            formatted_response = text_processor.format_text(response)
+            token_count = text_processor.count_tokens(formatted_response)
+            return f"{formatted_response}\n\nToken Count: {token_count}"
         else:
             qa_response = self.process_questions([query])[0]
-            return text_processor.format_text(qa_response.answer)
+            formatted_response = text_processor.format_text(qa_response.answer)
+            token_count = text_processor.count_tokens(formatted_response)
+            return f"{formatted_response}\n\nToken Count: {token_count}"
 
 
     def run(self,  questions: List[str]) -> List[str]:
         """Run complete RAG pipeline."""
-        self.setup()
         return self.process_questions(questions)
