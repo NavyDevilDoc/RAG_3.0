@@ -18,7 +18,7 @@ def find_pdfs_in_folder(folder_path: str) -> list:
     return pdf_files
 
 # File path for environment variables
-env_path = r""
+env_path = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\env_variables.env"
 
 
 # Flag to choose between manual input and automatic folder search. Can be True for manual input or False for automatic search
@@ -29,14 +29,14 @@ if use_manual_input:
     doc_input = []
 else:
     # Specify the folder containing the PDF documents
-    pdf_folder_path = r""
+    pdf_folder_path = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\Local_RAG_Model\RAG_Model\Partial_EDQP"
     
     # Use the helper function to find all PDF files in the specified folder
     doc_input = find_pdfs_in_folder(pdf_folder_path)
 
 
 # Output directory for RAG responses
-output_dir = r""
+output_dir = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\Local_RAG_Model\RAG_Model\RAG_Outputs"
 
 '''
 Available choices for language models (LLMs)

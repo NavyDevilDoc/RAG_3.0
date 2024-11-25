@@ -21,6 +21,7 @@ class RAGConfig:
     embedding_type: EmbeddingType
     llm_index: int
     embedding_index: int
+    mode: str = 'rag'
 
     def to_dict(self) -> Dict[str, str]:
         """Convert config to format expected by ModelManager"""
@@ -32,7 +33,7 @@ class RAGConfig:
 def initialize_rag_components(config: RAGConfig) -> Tuple[Any, Any, int]:
     """Initialize RAG components using ModelManager's existing methods"""
     try:
-        model_manager = ModelManager(config.env_path)
+        model_manager = ModelManager(config.env_path, mode=config.mode)
         resource_manager = ComputeResourceManager().get_compute_settings()
         
         # Use existing validate_and_load_models method
