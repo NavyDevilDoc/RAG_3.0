@@ -1,4 +1,5 @@
 # main.py
+import os
 from Driver import Driver
 from ResponseFormatter import ResponseFormatter
 from TextPreprocessor import TextPreprocessor
@@ -6,13 +7,33 @@ import warnings
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+def find_pdfs_in_folder(folder_path: str) -> list:
+    """Find all PDF files in the specified folder and return their file paths."""
+    pdf_files = []
+    for root, dirs, files in os.walk(folder_path):
+        print(f"Found {len(files)} files in {root}")
+        for file in files:
+            if file.lower().endswith('.pdf'):
+                pdf_files.append(os.path.join(root, file))
+    return pdf_files
+
 # File path for environment variables
 env_path = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\env_variables.env"
 
-# List of document paths
-doc_input = [r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\Source_Documents\ED_Basic_Course_Guide\2.1.1_Command_Structures.pdf",
-             r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\Source_Documents\ED_Basic_Course_Guide\2.1.2_NAVSEA_Organization.pdf",
-             r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\Source_Documents\ED_Basic_Course_Guide\2.1.3_NAVWAR_Enterprise.pdf"]
+
+# Flag to choose between manual input and automatic folder search. Can be True for manual input or False for automatic search
+use_manual_input = False
+
+if use_manual_input:
+    # List of document paths; useful for a small number of documents
+    doc_input = []
+else:
+    # Specify the folder containing the PDF documents
+    pdf_folder_path = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\Local_RAG_Model\RAG_Model\Partial_EDQP"
+    
+    # Use the helper function to find all PDF files in the specified folder
+    doc_input = find_pdfs_in_folder(pdf_folder_path)
+
 
 # Output directory for RAG responses
 output_dir = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\Local_RAG_Model\RAG_Model\RAG_Outputs"
@@ -43,10 +64,11 @@ Sentence Transformer:
     4 - multi-qa-mpnet-base-dot-v1
 '''
 
+
 # Select the mode to run the driver in. Can be:
 #    'llm' - Send individual queries to the selected large language model
 #    'rag' - Run the RAG model on a list of questions
-mode = 'rag'
+mode = 'llm'
 
 
 # Initialize driver with all required parameters
@@ -63,14 +85,12 @@ driver = Driver(
     # Select the embedding model. Can be 'gpt', 'ollama', or 'sentence_transformer' and is case-insensitive
     embedding_type='SENTENCE_TRANSFORMER', 
 
-    # See chart above for available choices
+    # Enter the number corresponding to the desired models; see chart above for available choices
     llm_index=1, 
-
-    # See chart above for available choices
     embedding_index=2, 
 
     # Set the Pinecone index name
-    doc_name='test-index', 
+    doc_name='test-EDQP-index', 
 
     # Select the document chunking method to use. Can be:
     #    'PAGE'         - chunks each page separately
@@ -100,7 +120,7 @@ driver = Driver(
     mode=mode
 )
 
-# Run the driver in the selected mode
+## Run the driver in the selected mode ##
 
 # LLM mode
 if mode == 'llm': 
