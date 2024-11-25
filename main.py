@@ -6,13 +6,15 @@ import warnings
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# Configuration
+# File path for environment variables
 env_path = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\env_variables.env"
 
+# List of document paths
 doc_input = [r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\Source_Documents\ED_Basic_Course_Guide\2.1.1_Command_Structures.pdf",
              r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\Source_Documents\ED_Basic_Course_Guide\2.1.2_NAVSEA_Organization.pdf",
              r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\Source_Documents\ED_Basic_Course_Guide\2.1.3_NAVWAR_Enterprise.pdf"]
 
+# Output directory for RAG responses
 output_dir = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\Local_RAG_Model\RAG_Model\RAG_Outputs"
 
 '''
@@ -41,37 +43,81 @@ Sentence Transformer:
     4 - multi-qa-mpnet-base-dot-v1
 '''
 
-mode = 'rag' # 'llm' or 'rag'
+# Select the mode to run the driver in. Can be:
+#    'llm' - Send individual queries to the selected large language model
+#    'rag' - Run the RAG model on a list of questions
+mode = 'rag'
+
 
 # Initialize driver with all required parameters
 driver = Driver(
-    env_path=env_path,
-    doc_input=doc_input,
-    llm_type='ollama',
-    embedding_type='SENTENCE_TRANSFORMER',
-    llm_index=1,
-    embedding_index=2,
-    doc_name='test-index',
-    chunking_method='HIERARCHICAL',
+    # Path to environment variables file
+    env_path=env_path, 
+
+    # List of document paths
+    doc_input=doc_input, 
+
+    # Select OpenAI model ('gpt') or Ollama open-source model ('ollama') and is case-insensitive
+    llm_type='ollama', 
+
+    # Select the embedding model. Can be 'gpt', 'ollama', or 'sentence_transformer' and is case-insensitive
+    embedding_type='SENTENCE_TRANSFORMER', 
+
+    # See chart above for available choices
+    llm_index=1, 
+
+    # See chart above for available choices
+    embedding_index=2, 
+
+    # Set the Pinecone index name
+    doc_name='test-index', 
+
+    # Select the document chunking method to use. Can be:
+    #    'PAGE'         - chunks each page separately
+    #    'SEMANTIC'     - chunks based on semantic similarity
+    #    'HIERARCHICAL' - chunks based on hierarchical structure
+    chunking_method='HIERARCHICAL', 
+
+    # Select the database action. Can be: 
+    #    '_NEW'           - build a new datastore; using this will erase a datastore with the same index name/embedding model combo
+    #    '_ADD'           - add to an existing datastore; will not erase any data
+    #    '_EXISTING'      - use an existing datastore; will not erase any data
+    #    '_LOCAL_STORAGE' - use local storage for the datastore
     storage_type='PINECONE_EXISTING',
-    template_name='default',
-    use_ground_truth=False,
-    debug_mode=False,
+
+    # Select a pre-defined template for the response. Can be:
+    #    'default'  - standard response template
+    #    'short'    - short response template
+    #    'detailed' - detailed response template
+    template_name='default', 
+
+    # Load the ground truth file. Can be True or False; keep set to false unless the ground truth file has been updated
+    use_ground_truth=False, 
+
+    # Switch to debugging mode. Can be True or False; keep set to false for standard use
+    debug_mode=False, 
+
     mode=mode
 )
 
 # Run the driver in the selected mode
-if mode == 'llm': # LLM mode
-    # Direct LLM query
+
+# LLM mode
+if mode == 'llm': 
+    # Initialize the text preprocessor module
     text_preprocessor = TextPreprocessor()
-    question = "Who is the very model of a modern major general?"
-    response = driver.process_query(question)
-    print(f"\nQ: {question}")
+
+    # Enter the input query
+    input = "Generate a recipe for homemade apple pie. Include ingredients and detailed instructions."
+
+    # Process the input query and display the response
+    response = driver.process_query(input)
+    print(f"\nQ: {input}")
     print(f"A: {response}")
 
-
-elif mode == 'rag': # RAG mode
-    # Define questions
+# RAG mode
+elif mode == 'rag': 
+    # Define question(s)
     questions = [
         "What is the Goldwater-Nichols Reorganization Act?",
         "What is the vision of NAVSEA?",
@@ -79,14 +125,14 @@ elif mode == 'rag': # RAG mode
         "What year was the National Security Act passed?",
         "What year did the National Military Establishment become the Department of Defense?"
         ]
-    # Run and get answers
+    
+    # Run the model and and display the responses
     qa_responses = driver.run(questions) 
-    # Save File
+    
+    # Save the question/answer pairs to a text file
     formatter = ResponseFormatter(debug_mode=False)
     saved_path = formatter.save_to_file(qa_responses,
                                         "rag_responses",
                                         output_dir=output_dir)
-
-    # Print formatted responses to console
     for response in qa_responses:
         print(formatter.format_response(response))
