@@ -110,3 +110,7 @@ class TextPreprocessor:
         except Exception as e:
             self.logger.error(f"Error formatting text: {e}")
             raise
+
+    def count_tokens(self, text: str) -> int:
+        """Count the number of tokens in the text."""
+        return len(word_tokenize(text))
