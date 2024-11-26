@@ -29,14 +29,16 @@ class Driver:
         template_name: str = 'default',
         use_ground_truth: bool = False,
         debug_mode: bool = False,
-        mode: str = 'rag'
+        mode: str = 'rag',
+        process_questions: bool = True
     ):
         """Initialize RAG driver based on mode."""
         self.mode = mode.lower()
         
         # For all modes
         self.env_path = env_path
-        self.llm_type = llm_type.lower() if mode == 'llm' else llm_type.upper()
+        self.llm_type = llm_type
+        self.embedding_type = embedding_type
         self.llm_index = llm_index
         self.debug_mode = debug_mode
         
@@ -60,6 +62,7 @@ class Driver:
         self.template_name = template_name
         self.use_ground_truth = use_ground_truth
         self.mode = mode
+        self.process_questions = process_questions
         
         # Initialize instance variables
         self.model = None
@@ -220,6 +223,9 @@ class Driver:
             return f"{formatted_response}\n\nToken Count: {token_count}"
 
 
-    def run(self,  questions: List[str]) -> List[str]:
+    def run(self, questions: List[str]) -> List[str]:
         """Run complete RAG pipeline."""
+        if not self.process_questions:
+            print("Question processing disabled - datastore operations completed")
+            return []
         return self.process_questions(questions)

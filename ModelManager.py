@@ -170,9 +170,16 @@ class ModelManager:
             
             # Case insensitive comparison
             if selected_llm_type.lower() == "gpt":
-                return ChatOpenAI(openai_api_key=self.openai_api_key)
+                return ChatOpenAI(openai_api_key=self.openai_api_key, 
+                                  temperature = 0.2,
+                                  streaming=True,)
             else:
-                return ChatOllama(model=selected_llm, **resource_manager)
+                return ChatOllama(model=selected_llm, 
+                                  **resource_manager,
+                                  temperature=0.2,
+                                  top_k=20,
+                                  top_p=0.2,
+                                  disable_streaming=False)
         except Exception as e:
             print(f"Error loading model: {e}")
             sys.exit(1)
@@ -181,7 +188,7 @@ class ModelManager:
     def load_embeddings(self, embedding_type: str, model_name: str) -> Any:
         """Load and configure embedding model with type validation."""
         try:
-            embedding_type = embedding_type.upper()
+            embedding_type = embedding_type
             
             # Only enforce GPT-GPT pairing in LLM mode
             if self.mode == 'llm' and self.llm_type == 'GPT' and embedding_type != 'GPT':
