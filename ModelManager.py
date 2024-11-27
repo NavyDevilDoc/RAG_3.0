@@ -99,16 +99,6 @@ class ModelManager:
 
 
     def define_llm_choices(self) -> Dict[str, Any]:
-        """
-        Define available language model choices.
-
-        Returns:
-            Dict[str, Any]: Available LLM configurations
-
-        Example:
-            >>> choices = manager.define_llm_choices()
-            >>> print(choices["gpt"])  # "gpt-4o"
-        """
         return {
             "GPT": "gpt-4o",
             "OLLAMA": [
@@ -120,16 +110,6 @@ class ModelManager:
 
 
     def define_embedding_choices(self) -> Dict[str, List[str]]:
-        """
-        Define available embedding model choices.
-
-        Returns:
-            Dict[str, List[str]]: Available embedding model configurations
-
-        Example:
-            >>> choices = manager.define_embedding_choices()
-            >>> print(choices["openai"])  # ["text-embedding-ada-002"]
-        """
         return {
             "GPT": [
                 "text-embedding-3-small",
