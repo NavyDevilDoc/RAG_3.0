@@ -131,12 +131,6 @@ class ModelManager:
             >>> print(choices["openai"])  # ["text-embedding-ada-002"]
         """
         return {
-            "OLLAMA": [
-                "nomic-embed-text",
-                "mxbai-embed-large",
-                "all-minilm",
-                "snowflake-arctic-embed"
-            ],
             "GPT": [
                 "text-embedding-3-small",
                 "text-embedding-3-large",
@@ -176,9 +170,6 @@ class ModelManager:
             else:
                 return ChatOllama(model=selected_llm, 
                                   **resource_manager,
-                                  temperature=0.2,
-                                  top_k=20,
-                                  top_p=0.2,
                                   disable_streaming=False)
         except Exception as e:
             print(f"Error loading model: {e}")
@@ -199,8 +190,6 @@ class ModelManager:
                     model=model_name,
                     openai_api_key=self.openai_api_key
                 )
-            elif embedding_type == 'OLLAMA':
-                return OllamaEmbeddings(model=model_name)
             elif embedding_type == 'SENTENCE_TRANSFORMER':
                 return SentenceTransformerEmbeddings(model_name=model_name)
             else:
