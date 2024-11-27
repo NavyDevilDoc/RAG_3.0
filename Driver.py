@@ -21,8 +21,8 @@ class Driver:
         doc_input: List[str] = None,
         llm_type: str = 'OLLAMA',
         embedding_type: str = 'GPT',
-        llm_index: int = 1,
-        embedding_index: int = 0,
+        llm_model: str = 'llama3.2:latest',  # Changed from index to model name
+        embedding_model: str = 'text-embedding-3-small', # Changed from index to model name
         doc_name: str = 'test-index',
         chunking_method: str = 'HIERARCHICAL',
         storage_type: str = 'PINECONE_EXISTING',
@@ -39,7 +39,8 @@ class Driver:
         self.env_path = env_path
         self.llm_type = llm_type
         self.embedding_type = embedding_type
-        self.llm_index = llm_index
+        self.llm_model = llm_model
+        self.embedding_model = embedding_model
         self.debug_mode = debug_mode
         
         # Initialize LLM query manager for direct queries
@@ -47,9 +48,9 @@ class Driver:
             self.llm_query = LLMQueryManager(
                 env_path=env_path,
                 llm_type=llm_type,
-                llm_index=llm_index,
+                llm_model=llm_model,
                 embedding_type=embedding_type,
-                embedding_index=embedding_index,
+                embedding_model=embedding_model,
                 debug_mode=debug_mode
             )
             return  # Early exit - don't initialize RAG components
@@ -57,7 +58,7 @@ class Driver:
         # Only initialize RAG components if in RAG mode
         self.doc_input = doc_input
         self.embedding_type = embedding_type
-        self.embedding_index = embedding_index
+        self.embedding_index = embedding_model
         self.doc_name = doc_name
         self.chunking_method = chunking_method
         self.storage_type = storage_type
@@ -102,9 +103,9 @@ class Driver:
             env_path=self.env_path,
             llm_type=self._convert_llm_type(self.llm_type),
             embedding_type=self._convert_embedding_type(self.embedding_type),
-            llm_index=self.llm_index,
-            embedding_index=self.embedding_index,
-            mode = self.mode
+            llm_model=self.llm_model,
+            embedding_model=self.embedding_model,
+            mode=self.mode
         )
         
         components = initialize_rag_components(config)

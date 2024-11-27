@@ -66,20 +66,20 @@ driver = Driver(
     # Select the mode to run the driver in. Can be:
     #   'llm' - Send individual queries to the selected large language model
     #   'rag' - Run the RAG model on a list of questions
-    mode='rag',
+    mode='llm',
 
 
                                     ## Set for both modes ##
 
     # Path to environment variables file
     env_path=env_path, 
-    # Select OpenAI model ('GPT') or Ollama open-source model ('OLLAMA') and is case-sensitive
-    llm_type='OLLAMA', 
-    # Select the embedding model. Can be 'GPT'or 'SENTENCE_TRANSFORMER' and is case-sensitive
-    embedding_type='GPT', 
+    # Select OpenAI model ('GPT') or Ollama open-source model ('OLLAMA') and is case-insensitive
+    llm_type='ollama', 
+    # Select the embedding model. Can be 'GPT'or 'SENTENCE_TRANSFORMER' and is case-insensitive
+    embedding_type='sentence_transformer', 
     # Enter the number corresponding to the desired models; see chart above for available choices
-    llm_index=1, 
-    embedding_index=0, 
+    llm_model='llama3.2:latest', 
+    embedding_model='all-mpnet-base-v2', 
     # Switch to debugging mode. Can be True or False; keep set to false for standard use
     debug_mode=False, 
 
@@ -109,6 +109,7 @@ driver = Driver(
     # Load the ground truth file. Can be True or False; keep set to false unless the ground truth file has been updated
     use_ground_truth=False, 
 )
+
 
 ## Run the driver in the selected mode ##
 # LLM mode

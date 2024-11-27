@@ -18,7 +18,6 @@ import sys
 from dotenv import load_dotenv
 from langchain_ollama import ChatOllama
 from langchain_openai.chat_models import ChatOpenAI
-from langchain_community.embeddings import OllamaEmbeddings
 from langchain_openai.embeddings import OpenAIEmbeddings
 from SentenceTransformerEmbeddings import SentenceTransformerEmbeddings
 
@@ -51,8 +50,6 @@ class ModelManager:
         """
         self.mode = mode.lower()
         self.load_environment_variables(env_path)
-        self.llm_choices = self.define_llm_choices()
-        self.embedding_choices = self.define_embedding_choices()
         self.llm_type = None
 
 
@@ -91,33 +88,6 @@ class ModelManager:
     def get_openai_api_key(self) -> str:
         """Retrieve the OpenAI API key."""
         return self.openai_api_key
-
-
-    def define_llm_choices(self) -> Dict[str, Any]:
-        return {
-            "GPT": "gpt-4o",
-            "OLLAMA": [
-                "llama3.1:8b-instruct-q5_K_M",
-                "llama3.2:latest",
-                "mistral-nemo:12b-instruct-2407-q5_K_M"
-            ]
-        }
-
-
-    def define_embedding_choices(self) -> Dict[str, List[str]]:
-        return {
-            "GPT": [
-                "text-embedding-3-small",
-                "text-embedding-3-large",
-            ],
-            "SENTENCE_TRANSFORMER": [
-                "all-MiniLM-L6-v2",
-                "all-MiniLM-L12-v2",
-                "all-mpnet-base-v2",
-                "all-distilbert-base-v2",
-                "multi-qa-mpnet-base-dot-v1"
-            ]
-        }
 
 
     def validate_selection(self, selection: str, valid_choices: List[str]) -> None:
@@ -165,8 +135,6 @@ class ModelManager:
                     model=model_name,
                     openai_api_key=self.openai_api_key
                 )
-            #elif embedding_type == 'OLLAMA':
-                #return OllamaEmbeddings(model=model_name)
             elif embedding_type == 'SENTENCE_TRANSFORMER':
                 return SentenceTransformerEmbeddings(model_name=model_name)
             else:
@@ -199,7 +167,7 @@ class ModelManager:
             sys.exit(1)
 
 
-    def validate_and_load_models(self, config: Dict[str, str], select_llm: int, select_embed: int, resource_manager: Any):
+    def validate_and_load_models(self, config: Dict[str, str], select_llm: str, select_embed: str, resource_manager: Any):
         """Validate and load selected models."""
         try:
             # Normalize config keys
@@ -208,9 +176,9 @@ class ModelManager:
                 for key, value in config.items()
             }
             
-            # Get model selections
-            selected_llm = self.llm_choices[normalized_config["SELECTED_LLM_TYPE"]][select_llm]
-            selected_embedding_model = self.embedding_choices[normalized_config["SELECTED_EMBEDDING_SCHEME"]][select_embed]
+            # Get model selections - now using strings directly 
+            selected_llm = select_llm
+            selected_embedding_model = select_embed
             
             # Load models
             model = self.load_model(
@@ -226,11 +194,8 @@ class ModelManager:
             # Get dimensions
             dimensions = self.determine_embedding_dimensions(embeddings)
             
-            # Return all 5 expected values
             return model, embeddings, dimensions, selected_llm, selected_embedding_model
             
         except KeyError as e:
             print(f"Model selection error: {e}")
-            print(f"Available LLM types: {list(self.llm_choices.keys())}")
-            print(f"Available embedding types: {list(self.embedding_choices.keys())}")
             raise

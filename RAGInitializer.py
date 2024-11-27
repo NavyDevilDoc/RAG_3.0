@@ -15,8 +15,8 @@ class RAGConfig:
     env_path: str
     llm_type: LLMType
     embedding_type: EmbeddingType
-    llm_index: int
-    embedding_index: int
+    llm_model: str
+    embedding_model: str 
     mode: str = 'rag'
 
     def to_dict(self) -> Dict[str, str]:
@@ -35,8 +35,8 @@ def initialize_rag_components(config: RAGConfig) -> Tuple[Any, Any, int]:
         # Use existing validate_and_load_models method
         model, embeddings, dimensions, selected_llm, selected_embedding_model = model_manager.validate_and_load_models(
             config=config.to_dict(),
-            select_llm=config.llm_index,
-            select_embed=config.embedding_index,
+            select_llm=config.llm_model,
+            select_embed=config.embedding_model,
             resource_manager=resource_manager
         )
         

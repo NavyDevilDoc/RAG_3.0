@@ -11,8 +11,8 @@ class LLMQueryManager:
         env_path: str,
         llm_type: str,
         embedding_type: str,
-        llm_index: int,
-        embedding_index: int,
+        llm_model: str,
+        embedding_model: str,
         debug_mode: bool = False
     ):
         """Initialize LLM interface."""
@@ -20,8 +20,8 @@ class LLMQueryManager:
         self.parser = StrOutputParser()
         self.llm_type = llm_type
         self.embedding_type = embedding_type
-        self.llm_index = llm_index
-        self.embedding_index = embedding_index
+        self.llm_model = llm_model
+        self.embedding_model = embedding_model
         self.debug_mode = debug_mode
         self.model = self._initialize_model()
         
@@ -34,8 +34,8 @@ class LLMQueryManager:
         
         model, _, _, self.selected_llm, self.selected_embedding_model = self.model_manager.validate_and_load_models(
             config=config,
-            select_llm=self.llm_index,
-            select_embed=self.embedding_index,
+            select_llm=self.llm_model,
+            select_embed=self.embedding_model,
             resource_manager={}
         )
         return model
