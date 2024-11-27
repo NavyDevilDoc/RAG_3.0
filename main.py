@@ -51,11 +51,6 @@ Available choices for embedding models
 GPT:
     0 - text-embedding-3-small
     1 - text-embedding-3-large
-Ollama:
-    0 - nomic-embed-text
-    1 - mxbai-embed-large
-    2 - all-minilm
-    3 - snowflake-arctic-embed
 Sentence Transformer:
     0 - all-MiniLM-L6-v2
     1 - all-MiniLM-L12-v2
@@ -65,65 +60,59 @@ Sentence Transformer:
 '''
 
 
-# Select the mode to run the driver in. Can be:
-#    'llm' - Send individual queries to the selected large language model
-#    'rag' - Run the RAG model on a list of questions
-mode = 'llm'
-
-
 # Initialize driver with all required parameters
 driver = Driver(
+
+    # Select the mode to run the driver in. Can be:
+    #   'llm' - Send individual queries to the selected large language model
+    #   'rag' - Run the RAG model on a list of questions
+    mode='rag',
+
+
+                                    ## Set for both modes ##
+
     # Path to environment variables file
     env_path=env_path, 
-
-    # List of document paths
-    doc_input=doc_input, 
-
-    # Select OpenAI model ('gpt') or Ollama open-source model ('ollama') and is case-insensitive
-    llm_type='ollama', 
-
-    # Select the embedding model. Can be 'gpt', 'ollama', or 'sentence_transformer' and is case-insensitive
-    embedding_type='SENTENCE_TRANSFORMER', 
-
+    # Select OpenAI model ('GPT') or Ollama open-source model ('OLLAMA') and is case-sensitive
+    llm_type='OLLAMA', 
+    # Select the embedding model. Can be 'GPT'or 'SENTENCE_TRANSFORMER' and is case-sensitive
+    embedding_type='GPT', 
     # Enter the number corresponding to the desired models; see chart above for available choices
     llm_index=1, 
-    embedding_index=2, 
+    embedding_index=0, 
+    # Switch to debugging mode. Can be True or False; keep set to false for standard use
+    debug_mode=False, 
 
+
+                                    ## Set for RAG mode ##
+
+    # List of document paths
+    doc_input=doc_input,
     # Set the Pinecone index name
-    doc_name='test-EDQP-index', 
-
+    doc_name='edqp-index', 
     # Select the document chunking method to use. Can be:
     #    'PAGE'         - chunks each page separately
     #    'SEMANTIC'     - chunks based on semantic similarity
     #    'HIERARCHICAL' - chunks based on hierarchical structure
     chunking_method='HIERARCHICAL', 
-
     # Select the database action. Can be: 
     #    '_NEW'           - build a new datastore; using this will erase a datastore with the same index name/embedding model combo
     #    '_ADD'           - add to an existing datastore; will not erase any data
     #    '_EXISTING'      - use an existing datastore; will not erase any data
     #    '_LOCAL_STORAGE' - use local storage for the datastore
     storage_type='PINECONE_EXISTING',
-
     # Select a pre-defined template for the response. Can be:
     #    'default'  - standard response template
     #    'short'    - short response template
     #    'detailed' - detailed response template
     template_name='default', 
-
     # Load the ground truth file. Can be True or False; keep set to false unless the ground truth file has been updated
     use_ground_truth=False, 
-
-    # Switch to debugging mode. Can be True or False; keep set to false for standard use
-    debug_mode=False, 
-
-    mode=mode
 )
 
 ## Run the driver in the selected mode ##
-
 # LLM mode
-if mode == 'llm': 
+if driver.mode == 'llm': 
     # Initialize the text preprocessor module
     text_preprocessor = TextPreprocessor()
 
@@ -136,12 +125,12 @@ if mode == 'llm':
     print(f"A: {response}")
 
 # RAG mode
-elif mode == 'rag': 
+elif driver.mode == 'rag': 
     # Define question(s)
     questions = [
-        "What is the Goldwater-Nichols Reorganization Act?",
-        "What is the vision of NAVSEA?",
-        "What is the mission of NAVWAR?",
+        #"What is the Goldwater-Nichols Reorganization Act?",
+        #"What is the vision of NAVSEA?",
+        #"What is the mission of NAVWAR?",
         "What year was the National Security Act passed?",
         "What year did the National Military Establishment become the Department of Defense?"
         ]

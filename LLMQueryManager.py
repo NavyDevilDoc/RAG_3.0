@@ -9,15 +9,19 @@ class LLMQueryManager:
     def __init__(
         self,
         env_path: str,
-        llm_type: str = 'OLLAMA',
-        llm_index: int = 1,
+        llm_type: str,
+        embedding_type: str,
+        llm_index: int,
+        embedding_index: int,
         debug_mode: bool = False
     ):
         """Initialize LLM interface."""
         self.model_manager = ModelManager(env_path)
         self.parser = StrOutputParser()
         self.llm_type = llm_type
+        self.embedding_type = embedding_type
         self.llm_index = llm_index
+        self.embedding_index = embedding_index
         self.debug_mode = debug_mode
         self.model = self._initialize_model()
         
@@ -25,13 +29,13 @@ class LLMQueryManager:
         """Initialize the language model."""
         config = {
             "selected_llm_type": self.llm_type,
-            "selected_embedding_scheme": self.llm_type  # Match embedding type to LLM type
+            "selected_embedding_scheme": self.embedding_type  
         }
         
-        model, _, _, self.selected_llm, _ = self.model_manager.validate_and_load_models(
+        model, _, _, self.selected_llm, self.selected_embedding_model = self.model_manager.validate_and_load_models(
             config=config,
             select_llm=self.llm_index,
-            select_embed=0,  # Use first embedding model of matching type
+            select_embed=self.embedding_index,
             resource_manager={}
         )
         return model

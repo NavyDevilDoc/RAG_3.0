@@ -20,9 +20,9 @@ class Driver:
         env_path: str,
         doc_input: List[str] = None,
         llm_type: str = 'OLLAMA',
-        embedding_type: str = 'SENTENCE_TRANSFORMER',
+        embedding_type: str = 'GPT',
         llm_index: int = 1,
-        embedding_index: int = 2,
+        embedding_index: int = 0,
         doc_name: str = 'test-index',
         chunking_method: str = 'HIERARCHICAL',
         storage_type: str = 'PINECONE_EXISTING',
@@ -48,6 +48,8 @@ class Driver:
                 env_path=env_path,
                 llm_type=llm_type,
                 llm_index=llm_index,
+                embedding_type=embedding_type,
+                embedding_index=embedding_index,
                 debug_mode=debug_mode
             )
             return  # Early exit - don't initialize RAG components
@@ -62,7 +64,7 @@ class Driver:
         self.template_name = template_name
         self.use_ground_truth = use_ground_truth
         self.mode = mode
-        self.process_questions = process_questions
+        self.should_process_questions = process_questions
         
         # Initialize instance variables
         self.model = None
@@ -225,7 +227,7 @@ class Driver:
 
     def run(self, questions: List[str]) -> List[str]:
         """Run complete RAG pipeline."""
-        if not self.process_questions:
+        if not self.should_process_questions:
             print("Question processing disabled - datastore operations completed")
             return []
         return self.process_questions(questions)

@@ -1,17 +1,13 @@
-# RAGInitializer.py (Test)
+# RAGInitializer.py
 from enum import Enum
 from dataclasses import dataclass
 from typing import Dict, Tuple, Any
 from ModelManager import ModelManager
 from ComputeResourceManager import ComputeResourceManager
-
-class LLMType(Enum):
-    GPT = "gpt"
-    OLLAMA = "ollama"
+from LLMType import LLMType
 
 class EmbeddingType(Enum):
     GPT = "gpt" 
-    OLLAMA = "ollama"
     SENTENCE_TRANSFORMER = "sentence_transformer"
 
 @dataclass

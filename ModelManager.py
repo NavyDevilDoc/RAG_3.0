@@ -37,12 +37,7 @@ class ModelManager:
         pinecone_api_key (str): Pinecone API key
         llm_choices (Dict[str, Any]): Available language models
         embedding_choices (Dict[str, Any]): Available embedding models
-
-    Example:
-        >>> manager = ModelManager(".env")
-        >>> llm = manager.initialize_llm("gpt-4")
     """
-
 
     def __init__(self, env_path: str, mode: str= 'rag'):
         """
@@ -170,6 +165,8 @@ class ModelManager:
                     model=model_name,
                     openai_api_key=self.openai_api_key
                 )
+            #elif embedding_type == 'OLLAMA':
+                #return OllamaEmbeddings(model=model_name)
             elif embedding_type == 'SENTENCE_TRANSFORMER':
                 return SentenceTransformerEmbeddings(model_name=model_name)
             else:
@@ -192,10 +189,6 @@ class ModelManager:
 
         Raises:
             SystemExit: If dimension detection fails
-
-        Example:
-            >>> dims = manager.determine_embedding_dimensions(embeddings)
-            >>> print(f"Embedding dimensions: {dims}")
         """
         try:
             text = "This is a text document."
