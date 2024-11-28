@@ -13,7 +13,7 @@ class LLMQueryManager:
         embedding_type: str,
         llm_model: str,
         embedding_model: str,
-        debug_mode: bool = False
+        debug_mode: bool = False,
     ):
         """Initialize LLM interface."""
         self.model_manager = ModelManager(env_path)
@@ -24,6 +24,7 @@ class LLMQueryManager:
         self.embedding_model = embedding_model
         self.debug_mode = debug_mode
         self.model = self._initialize_model()
+        self.conversation_history = []
         
     def _initialize_model(self) -> Any:
         """Initialize the language model."""
@@ -39,23 +40,40 @@ class LLMQueryManager:
             resource_manager={}
         )
         return model
+    
+    def add_to_history(self, role: str, content: str):
+        self.conversation_history.append({
+            "role": role,
+            "content": content
+        })
         
-    def ask(self, question: str) -> str:
-        """Ask a direct question to the LLM."""
+    def get_conversation_context(self) -> str:
+        return "\n".join([
+            f"{msg['role']}: {msg['content']}" 
+            for msg in self.conversation_history
+        ])
+
+    def ask(self, question: str, use_history: bool = True) -> str:
         try:
-            # Create chain with parser
-            chain = self.model | self.parser
+            self.add_to_history("user", question)
             
-            # Get response
-            response = chain.invoke(question)
+            # Include history in prompt if enabled
+            prompt = (
+                self.get_conversation_context() if use_history and self.conversation_history 
+                else question
+            )
+            
+            chain = self.model | self.parser
+            response = chain.invoke(prompt)
+            
+            self.add_to_history("assistant", response)
             
             if self.debug_mode:
                 print(f"\nModel: {self.selected_llm}")
-                print(f"Question: {question}")
+                print(f"History length: {len(self.conversation_history)}")
                 
-            # Return response string directly - no .content needed
             return response
             
         except Exception as e:
-            print(f"Error in LLM query: {e}")  # Debug info
+            print(f"Error in LLM query: {e}")
             return f"Error processing question: {e}"

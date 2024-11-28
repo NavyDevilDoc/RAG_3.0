@@ -1,5 +1,6 @@
 # Driver.py - Driver class for RAG model execution
 
+import os
 from RAGInitializer import LLMType, EmbeddingType, RAGConfig, initialize_rag_components
 from CombinedProcessor import CombinedProcessor, ChunkingMethod
 from DatastoreInitializer import StorageType
@@ -76,16 +77,27 @@ class Driver:
         self.model_manager = None
         self.datastore = None
         
+        
         # Initial setup for RAG mode
         self.setup()
         
+# In Driver.py, update the conversion methods:
+
     @staticmethod
     def _convert_llm_type(llm_type_str: str) -> LLMType:
-        return getattr(LLMType, llm_type_str)
-    
+        """Convert string to LLMType enum case-insensitively"""
+        try:
+            return getattr(LLMType, llm_type_str.upper())
+        except AttributeError:
+            raise ValueError(f"Invalid LLM type: {llm_type_str}. Must be one of: {[t.name for t in LLMType]}")
+
     @staticmethod
     def _convert_embedding_type(embedding_type_str: str) -> EmbeddingType:
-        return getattr(EmbeddingType, embedding_type_str)
+        """Convert string to EmbeddingType enum case-insensitively"""
+        try:
+            return getattr(EmbeddingType, embedding_type_str.upper())
+        except AttributeError:
+            raise ValueError(f"Invalid embedding type: {embedding_type_str}. Must be one of: {[t.name for t in EmbeddingType]}")
     
     @staticmethod
     def _convert_chunking_method(chunking_method_str: str) -> ChunkingMethod:
@@ -94,6 +106,18 @@ class Driver:
     @staticmethod
     def _convert_storage_type(storage_type_str: str) -> StorageType:
         return getattr(StorageType, storage_type_str)
+    
+
+    @staticmethod
+    def find_pdfs_in_folder(folder_path: str) -> list:
+        """Find all PDF files in the specified folder and return their file paths."""
+        pdf_files = []
+        for root, dirs, files in os.walk(folder_path):
+            print(f"Found {len(files)} files in {root}")
+            for file in files:
+                if file.lower().endswith('.pdf'):
+                    pdf_files.append(os.path.join(root, file))
+        return pdf_files
     
 
     def setup(self):
@@ -208,22 +232,37 @@ class Driver:
             raise RuntimeError(f"Error processing questions: {e}")
 
 
-    def process_query(self, query: str) -> str:
-        """Process query based on mode and format response."""
+    def process_query(self, query: str, use_history: bool = True) -> str:
+        """Process query with conversation history support."""
         text_processor = TextPreprocessor()
         
         if self.mode == 'llm':
             if not self.llm_query:
                 raise RuntimeError("LLM mode not initialized")
-            response = self.llm_query.ask(query)
+            
+            response = self.llm_query.ask(query, use_history=use_history)
             formatted_response = text_processor.format_text(response)
             token_count = text_processor.count_tokens(formatted_response)
             return f"{formatted_response}\n\nToken Count: {token_count}"
         else:
+            # RAG mode remains unchanged
             qa_response = self.process_questions([query])[0]
             formatted_response = text_processor.format_text(qa_response.answer)
             token_count = text_processor.count_tokens(formatted_response)
             return f"{formatted_response}\n\nToken Count: {token_count}"
+
+
+    def clear_conversation_history(self):
+        """Clear the conversation history in LLM mode."""
+        if self.mode == 'llm' and self.llm_query:
+            self.llm_query.conversation_history = []
+
+
+    def get_conversation_history(self):
+        """Get the current conversation history in LLM mode."""
+        if self.mode == 'llm' and self.llm_query:
+            return self.llm_query.conversation_history
+        return []
 
 
     def run(self, questions: List[str]) -> List[str]:
