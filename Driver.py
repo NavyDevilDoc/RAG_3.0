@@ -19,6 +19,7 @@ class Driver:
     def __init__(
         self,
         env_path: str,
+        json_path: str,
         doc_input: List[str] = None,
         llm_type: str = 'OLLAMA',
         embedding_type: str = 'GPT',
@@ -38,6 +39,7 @@ class Driver:
         
         # For all modes
         self.env_path = env_path
+        self.json_path = json_path
         self.llm_type = llm_type
         self.embedding_type = embedding_type
         self.llm_model = llm_model
@@ -48,6 +50,7 @@ class Driver:
         if self.mode == 'llm':
             self.llm_query = LLMQueryManager(
                 env_path=env_path,
+                json_path=json_path,
                 llm_type=llm_type,
                 llm_model=llm_model,
                 embedding_type=embedding_type,

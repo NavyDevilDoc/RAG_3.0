@@ -1,6 +1,6 @@
 # main.py
 import os
-from Driver import Driver, find_pdfs_in_folder
+from Driver import Driver
 from ResponseFormatter import ResponseFormatter
 from TextPreprocessor import TextPreprocessor
 import warnings
@@ -18,18 +18,19 @@ else:
     # Specify the folder containing the PDF documents
     pdf_folder_path = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\Local_RAG_Model\RAG_Model\Partial_EDQP"
     # Use the helper function to find all PDF files in the specified folder
-    doc_input = find_pdfs_in_folder(pdf_folder_path)
+    doc_input = Driver.find_pdfs_in_folder(pdf_folder_path)
 # Output directory for RAG responses
 output_dir = r"C:\Users\docsp\Desktop\AI_ML_Folder\Python_Practice_Folder\Natural_Language_Processing\EDQP_RAG_Model\Local_RAG_Model\RAG_Model\RAG_Outputs"
 
 # Initialize driver with all required parameters
 driver = Driver(
-    mode='rag',
+## Set the mode to 'rag' for RAG mode or 'llm' for LLM mode ##
+    mode='llm',
 ## Set for both modes ##
     env_path=env_path, 
     llm_type='OLLAMA', 
     embedding_type='GPT', 
-    llm_model='llama3.2:latest', 
+    llm_model='granite-code:20b ', 
     embedding_model='text-embedding-3-small', 
     debug_mode=False, 
 ## Set for RAG mode ##
@@ -47,12 +48,23 @@ driver = Driver(
 if driver.mode == 'llm': 
     # Initialize the text preprocessor module
     text_preprocessor = TextPreprocessor()
+
+    # Flag to clear conversation history
+    clear_history = False  # Set to True to clear history
+    if clear_history:
+        driver.clear_conversation_history()
+        print("\nConversation history cleared.")
+    else:
+        history = driver.get_conversation_history()
+        print(f"\nCurrent conversation has {len(history)} messages.")
+
     # Enter the input query
-    input = "How would I use Python to code Gauss-Jordan elimination?"
+    input = "How can we account for cases of non-square matrices?"
     # Process the input query and display the response
     response = driver.process_query(input)
     print(f"\nQ: {input}")
     print(f"A: {response}")
+    print(f"\nConversation length: {len(history)} messages")
 
 # RAG mode
 elif driver.mode == 'rag': 

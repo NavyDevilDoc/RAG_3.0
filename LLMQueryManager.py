@@ -12,14 +12,17 @@ class LLMQueryManager:
     def __init__(
         self,
         env_path: str,
+        json_path: str,
         llm_type: str,
         embedding_type: str,
         llm_model: str,
         embedding_model: str,
         debug_mode: bool = False,
+        
     ):
         """Initialize LLM interface."""
         self.model_manager = ModelManager(env_path)
+        self.json_path = json_path
         self.parser = StrOutputParser()
         self.llm_type = llm_type
         self.embedding_type = embedding_type
@@ -28,9 +31,13 @@ class LLMQueryManager:
         self.debug_mode = debug_mode
         self.model = self._initialize_model()
         self.conversation_history = []
-        self.history_file = os.path.join(os.path.dirname(env_path), "conversation_history.json")
+        self.history_file = os.path.join(os.path.dirname(json_path), "conversation_history.json")
         self.conversation_history = self.load_history()
+        self.max_history_length = 50  # Default messages
+        self.max_tokens_per_message = 500  # Approximate
+        self.max_context_tokens = 8000  # Model specific
         
+
     def _initialize_model(self) -> Any:
         """Initialize the language model."""
         config = {
@@ -46,6 +53,7 @@ class LLMQueryManager:
         )
         return model
 
+
     def load_history(self) -> list:
         """Load conversation history from JSON file."""
         try:
@@ -56,6 +64,7 @@ class LLMQueryManager:
             print(f"Error loading history: {e}")
         return []
 
+
     def save_history(self):
         """Save conversation history to JSON file."""
         try:
@@ -64,24 +73,29 @@ class LLMQueryManager:
         except Exception as e:
             print(f"Error saving history: {e}")
 
+
     def add_to_history(self, role: str, content: str):
-        """Add message to history with proper timestamp."""
-        try:
-            timestamp = datetime.now().isoformat()
-            self.conversation_history.append({
-                "role": role,
-                "content": content,
-                "timestamp": timestamp
-            })
-            self.save_history()
-        except Exception as e:
-            print(f"Error adding to history: {e}")
-            # Add message without timestamp if datetime fails
-            self.conversation_history.append({
-                "role": role,
-                "content": content
-            })
+        """Add message with history management."""
+        # Trim history if exceeding limits
+        while (len(self.conversation_history) >= self.max_history_length or
+               self._estimate_total_tokens() >= self.max_context_tokens):
+            self.conversation_history.pop(0)  # Remove oldest message
+            
+        # Add new message
+        self.conversation_history.append({
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now().isoformat()
+        })
+        self.save_history()
         
+        
+    def _estimate_total_tokens(self) -> int:
+        """Rough token count estimation."""
+        return sum(len(msg["content"].split()) * 1.3 
+                  for msg in self.conversation_history)
+        
+
     def get_conversation_context(self) -> str:
         return "\n".join([
             f"{msg['role']}: {msg['content']}" 
