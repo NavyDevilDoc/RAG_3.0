@@ -1,5 +1,8 @@
 # LLMQueryManager.py
-from typing import Optional, Any
+import os
+import json
+from datetime import datetime
+from typing import Any
 from ModelManager import ModelManager
 from langchain_core.output_parsers import StrOutputParser
 
@@ -25,6 +28,8 @@ class LLMQueryManager:
         self.debug_mode = debug_mode
         self.model = self._initialize_model()
         self.conversation_history = []
+        self.history_file = os.path.join(os.path.dirname(env_path), "conversation_history.json")
+        self.conversation_history = self.load_history()
         
     def _initialize_model(self) -> Any:
         """Initialize the language model."""
@@ -40,12 +45,42 @@ class LLMQueryManager:
             resource_manager={}
         )
         return model
-    
+
+    def load_history(self) -> list:
+        """Load conversation history from JSON file."""
+        try:
+            if os.path.exists(self.history_file):
+                with open(self.history_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception as e:
+            print(f"Error loading history: {e}")
+        return []
+
+    def save_history(self):
+        """Save conversation history to JSON file."""
+        try:
+            with open(self.history_file, 'w', encoding='utf-8') as f:
+                json.dump(self.conversation_history, f, indent=2)
+        except Exception as e:
+            print(f"Error saving history: {e}")
+
     def add_to_history(self, role: str, content: str):
-        self.conversation_history.append({
-            "role": role,
-            "content": content
-        })
+        """Add message to history with proper timestamp."""
+        try:
+            timestamp = datetime.now().isoformat()
+            self.conversation_history.append({
+                "role": role,
+                "content": content,
+                "timestamp": timestamp
+            })
+            self.save_history()
+        except Exception as e:
+            print(f"Error adding to history: {e}")
+            # Add message without timestamp if datetime fails
+            self.conversation_history.append({
+                "role": role,
+                "content": content
+            })
         
     def get_conversation_context(self) -> str:
         return "\n".join([
