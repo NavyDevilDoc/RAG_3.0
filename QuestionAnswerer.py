@@ -1,10 +1,12 @@
+# QuestionAnswerer.py
 import time
+import json
+from typing import Dict, List, Optional
 from ResponseSelector import ResponseSelector
 from TextPreprocessor import TextPreprocessor
-from ScoringMetric import ScoringMetric
 
 class QuestionAnswerer:
-    def __init__(self, chain, scoring_metric, embeddings):
+    def __init__(self, chain, scoring_metric, embeddings, ground_truth_path: Optional[str] = None):
         """
         Initialize the QuestionAnswerer.
         
@@ -12,12 +14,29 @@ class QuestionAnswerer:
             chain: The chain to use for question answering
             scoring_metric: Metric to evaluate response quality
             embeddings: Embedding model for text processing
+            ground_truth_path: Optional path to ground truth JSON file
         """
         self.chain = chain
         self.scoring_metric = scoring_metric
         self.embeddings = embeddings
+        self.ground_truth_path = ground_truth_path
+        self.ground_truth = self._load_ground_truth()
 
-    def answer_questions(self, questions, datastore, ground_truth=None, num_responses=3):
+    def _load_ground_truth(self) -> Dict[str, str]:
+        """Load ground truth data from JSON file."""
+        if not self.ground_truth_path:
+            return {}
+            
+        try:
+            with open(self.ground_truth_path, "r") as file:
+                data = json.load(file)
+            print(f"Ground truth loaded from {self.ground_truth_path}")
+            return data
+        except Exception as e:
+            print(f"Error loading ground truth: {e}")
+            return {}
+
+    def answer_questions(self, questions: List[str], datastore, use_ground_truth: bool = False, num_responses: int = 3):
         """Answer questions and return structured responses."""
         results = []
         start_time = time.time()
@@ -41,8 +60,8 @@ class QuestionAnswerer:
             ranked_responses = selector.rank_responses(question, responses)
             confidence_score = ranked_responses[0][1]
 
-            # Calculate quality scores
-            expected_answer = ground_truth.get(question) if ground_truth else None
+            # Calculate quality scores using ground truth if available
+            expected_answer = self.ground_truth.get(question) if use_ground_truth else None
             quality_scores = self.scoring_metric.compute_response_quality_score(
                 best_response, 
                 expected_answer
@@ -54,7 +73,8 @@ class QuestionAnswerer:
                 'confidence': confidence_score,
                 'references': references,
                 'quality_scores': quality_scores,
-                'processing_time': time.time() - start_time
+                'processing_time': time.time() - start_time,
+                'ground_truth_used': bool(expected_answer)
             })
 
             processor = TextPreprocessor()
@@ -62,4 +82,4 @@ class QuestionAnswerer:
             print(f"Confidence Score: {confidence_score:.2f}")
             print(f"Quality Scores: {quality_scores}\n")
 
-        return results 
+        return results
