@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, Tuple, Any
 from ModelManager import ModelManager
 from ComputeResourceManager import ComputeResourceManager
-from LLMType import LLMType
+from LLMQueryManager import LLMType
 
 class EmbeddingType(Enum):
     GPT = "gpt" 
@@ -32,7 +32,6 @@ def initialize_rag_components(config: RAGConfig) -> Tuple[Any, Any, int]:
         model_manager = ModelManager(config.env_path, mode=config.mode)
         resource_manager = ComputeResourceManager().get_compute_settings()
         
-        # Use existing validate_and_load_models method
         model, embeddings, dimensions, selected_llm, selected_embedding_model = model_manager.validate_and_load_models(
             config=config.to_dict(),
             select_llm=config.llm_model,

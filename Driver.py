@@ -1,13 +1,13 @@
 # Driver.py - Driver class for RAG model execution
 
 import os
-from RAGInitializer import LLMType, EmbeddingType, RAGConfig, initialize_rag_components
+from RAGInitializer import EmbeddingType, RAGConfig, initialize_rag_components
 from CombinedProcessor import CombinedProcessor, ChunkingMethod
 from DatastoreInitializer import StorageType
 from QuestionInitializer import QuestionInitializer
 from TextPreprocessor import TextPreprocessor
 from ResponseFormatter import QAResponse
-from LLMQueryManager import LLMQueryManager
+from LLMQueryManager import LLMQueryManager, LLMType
 from typing import List, Dict, Any
 import warnings
 warnings.filterwarnings("ignore")
@@ -22,9 +22,9 @@ class Driver:
         json_path: str,
         doc_input: List[str] = None,
         llm_type: str = 'OLLAMA',
-        embedding_type: str = 'GPT',
-        llm_model: str = 'llama3.2:latest',  # Changed from index to model name
-        embedding_model: str = 'text-embedding-3-small', # Changed from index to model name
+        embedding_type: str = 'SENTENCE_TRANSFORMER',
+        llm_model: str = 'llama3.2:latest', 
+        embedding_model: str = 'all-mpnet-base-v2', 
         doc_name: str = 'test-index',
         chunking_method: str = 'HIERARCHICAL',
         storage_type: str = 'PINECONE_EXISTING',

@@ -3,12 +3,19 @@ import os
 import json
 from datetime import datetime
 from typing import Any
+from enum import Enum
 from ModelManager import ModelManager
 from langchain_core.output_parsers import StrOutputParser
 
+
+class LLMType(Enum):
+    """Available LLM types."""
+    GPT = 'gpt'
+    OLLAMA = 'ollama'
+
+
 class LLMQueryManager:
     """Direct LLM query interface without RAG."""
-    
     def __init__(
         self,
         env_path: str,
@@ -33,9 +40,9 @@ class LLMQueryManager:
         self.conversation_history = []
         self.history_file = os.path.join(os.path.dirname(json_path), "conversation_history.json")
         self.conversation_history = self.load_history()
-        self.max_history_length = 50  # Default messages
-        self.max_tokens_per_message = 500  # Approximate
-        self.max_context_tokens = 8000  # Model specific
+        self.max_history_length = 50  
+        self.max_tokens_per_message = 1000 
+        self.max_context_tokens = 8000  
         
 
     def _initialize_model(self) -> Any:
@@ -101,6 +108,7 @@ class LLMQueryManager:
             f"{msg['role']}: {msg['content']}" 
             for msg in self.conversation_history
         ])
+
 
     def ask(self, question: str, use_history: bool = True) -> str:
         try:
