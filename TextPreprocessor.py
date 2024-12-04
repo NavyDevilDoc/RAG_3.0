@@ -86,13 +86,14 @@ class TextPreprocessor:
             text = text.replace(':', ':\n')
             
             # Format text with line wrapping
+            words = text.split(' ')
             formatted_text = ''
             current_length = 0
             
             for word in text.split(' '):
                 word_length = len(word)
                 
-                if current_length + word_length > line_length:
+                if current_length + word_length + 1 > line_length:
                     formatted_text += '\n' + word
                     current_length = word_length
                 else:
@@ -104,7 +105,7 @@ class TextPreprocessor:
                 
                 # Reset length after newlines
                 if '\n' in word:
-                    current_length = word_length - word.rfind('\n') - 1
+                    current_length = len(word.split('\n')[-1])
                     
             return formatted_text
         except Exception as e:
@@ -114,3 +115,8 @@ class TextPreprocessor:
     def count_tokens(self, text: str) -> int:
         """Count the number of tokens in the text."""
         return len(word_tokenize(text))
+    
+sample_text = "This is a sample text to test the format_text function. It should wrap text correctly at the specified line length. If the problem is not solved, review the solution and try again."
+text_preprocessor = TextPreprocessor()
+formatted_text = text_preprocessor.format_text(sample_text, line_length=100)
+print(formatted_text)
