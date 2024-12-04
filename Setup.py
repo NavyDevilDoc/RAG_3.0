@@ -2,6 +2,8 @@
 from Driver import Driver
 from TextPreprocessor import TextPreprocessor
 
+text_preprocessor = TextPreprocessor()
+
 def load_environment_variables(file_path: str):
     from dotenv import load_dotenv
     load_dotenv(file_path)
@@ -23,7 +25,7 @@ def handle_rag_mode(driver: Driver):
             responses = driver.run(questions)
             for response in responses:
                 print(f"\nQ: {response.question}")
-                print(f"A: {response.answer}")
+                print(f"A: {text_preprocessor.format_text(response.answer)}")
                 print(f"Confidence: {response.confidence:.2f}")
                 if response.references:
                     print("References:")
@@ -33,7 +35,6 @@ def handle_rag_mode(driver: Driver):
         print("Question answering component is disabled.")
 
 def handle_llm_mode(driver: Driver):
-    text_preprocessor = TextPreprocessor()
     clear_history = True
     if clear_history:
         driver.clear_conversation_history()
@@ -44,4 +45,4 @@ def handle_llm_mode(driver: Driver):
             print("Exiting the program.")
             break
         response = driver.process_query(user_input)
-        print(response)
+        print(text_preprocessor.format_text(response))
