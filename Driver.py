@@ -36,6 +36,7 @@ class Driver:
     ):
         """Initialize RAG driver based on mode."""
         self.mode = mode.lower()
+        self.should_process_questions = process_questions
         
         # For all modes
         self.env_path = env_path
@@ -69,7 +70,6 @@ class Driver:
         self.template_name = template_name
         self.use_ground_truth = use_ground_truth
         self.mode = mode
-        self.should_process_questions = process_questions
         
         # Initialize instance variables
         self.model = None
@@ -83,8 +83,7 @@ class Driver:
         
         # Initial setup for RAG mode
         self.setup()
-        
-# In Driver.py, update the conversion methods:
+
 
     @staticmethod
     def _convert_llm_type(llm_type_str: str) -> LLMType:
@@ -110,7 +109,6 @@ class Driver:
     def _convert_storage_type(storage_type_str: str) -> StorageType:
         return getattr(StorageType, storage_type_str)
     
-
     @staticmethod
     def find_pdfs_in_folder(folder_path: str) -> list:
         """Find all PDF files in the specified folder and return their file paths."""
@@ -244,6 +242,7 @@ class Driver:
                 raise RuntimeError("LLM mode not initialized")
             
             response = self.llm_query.ask(query, use_history=use_history)
+            qa_response = QAResponse(question=query, answer=response, confidence=0.0)
             formatted_response = text_processor.format_text(response)
             token_count = text_processor.count_tokens(formatted_response)
             return f"{formatted_response}\n\nToken Count: {token_count}"

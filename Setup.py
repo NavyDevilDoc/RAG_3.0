@@ -1,8 +1,11 @@
 # Setup.py
 from Driver import Driver
 from TextPreprocessor import TextPreprocessor
+from ResponseFormatter import ResponseFormatter
+
 
 text_preprocessor = TextPreprocessor()
+response_formatter = ResponseFormatter()
 
 def load_environment_variables(file_path: str):
     from dotenv import load_dotenv
@@ -23,15 +26,8 @@ def handle_rag_mode(driver: Driver):
                 break
             questions = [q.strip() for q in user_input.split(',')]
             responses = driver.run(questions)
-            for response in responses:
-                print(f"\nQ: {response.question}")
-                print(f"A: {text_preprocessor.format_text(response.answer)}")
-                print(f"Confidence: {response.confidence:.2f}")
-                if response.references:
-                    print("References:")
-                    for ref in response.references:
-                        print(f"- {ref}")
-                print("="*50)
+            formatted_responses = response_formatter.format_batch_responses(responses)
+            print(formatted_responses)
         print("Question answering component is disabled.")
 
 def handle_llm_mode(driver: Driver):
@@ -45,4 +41,5 @@ def handle_llm_mode(driver: Driver):
             print("Exiting the program.")
             break
         response = driver.process_query(user_input)
-        print(text_preprocessor.format_text(response))
+        print(response)
+        
