@@ -13,31 +13,6 @@ from langchain_core.output_parsers import StrOutputParser
 from operator import itemgetter
 
 class ChainManager:
-
-    """
-    Manages the setup and execution of LangChain RAG chains.
-
-    This class combines a vector datastore, language model, and prompt template
-    to create a question-answering chain that retrieves relevant context before
-    generating responses.
-
-    Attributes:
-        datastore (Any): Vector datastore for document retrieval
-        model (Any): Language model for text generation
-        template (str): Prompt template for structuring queries
-
-    Example:
-        >>> from langchain.chat_models import ChatOpenAI
-        >>> datastore = Chroma(...)
-        >>> model = ChatOpenAI()
-        >>> template = Answer the question based on context:
-        ... Context: {context}
-        ... Question: {question}
-        ... Answer:
-        >>> chain_manager = ChainManager(datastore, model, template)
-        >>> chain = chain_manager.setup_chain()
-    """
-
     def __init__(self, datastore, model, template):
 
         """
@@ -51,10 +26,10 @@ class ChainManager:
         Raises:
             ValueError: If any required component is invalid
         """
-
         self.datastore = datastore
         self.model = model
         self.template = template
+
 
     def setup_chain(self):
         """
@@ -65,16 +40,11 @@ class ChainManager:
 
         Raises:
             RuntimeError: If chain setup fails
-
-        Example:
-            >>> chain = chain_manager.setup_chain()
-            >>> response = chain.invoke({"question": "What is RAG?"})
         """
         try:
             parser = StrOutputParser()
             prompt = PromptTemplate.from_template(self.template)
             retriever = self.datastore.as_retriever()
-
             chain = (
                 {
                     "context": itemgetter("question") | retriever,

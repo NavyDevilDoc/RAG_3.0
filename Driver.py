@@ -8,7 +8,9 @@ from QuestionInitializer import QuestionInitializer
 from TextPreprocessor import TextPreprocessor
 from ResponseFormatter import QAResponse
 from LLMQueryManager import LLMQueryManager, LLMType
-from typing import List, Dict, Any
+from typing import List
+from tqdm import tqdm
+import time
 import warnings
 warnings.filterwarnings("ignore")
 warnings.simplefilter("ignore")
@@ -49,15 +51,18 @@ class Driver:
         
         # Initialize LLM query manager for direct queries
         if self.mode == 'llm':
-            self.llm_query = LLMQueryManager(
-                env_path=env_path,
-                json_path=json_path,
-                llm_type=llm_type,
-                llm_model=llm_model,
-                embedding_type=embedding_type,
-                embedding_model=embedding_model,
-                debug_mode=debug_mode
-            )
+            if self.llm_type.lower() == 'ollama':
+                self._initialize_ollama_model_with_progress()
+            else:
+                self.llm_query = LLMQueryManager(
+                    env_path=env_path,
+                    json_path=json_path,
+                    llm_type=llm_type,
+                    llm_model=llm_model,
+                    embedding_type=embedding_type,
+                    embedding_model=embedding_model,
+                    debug_mode=debug_mode
+                )
             return  # Early exit - don't initialize RAG components
             
         # Only initialize RAG components if in RAG mode
@@ -83,6 +88,24 @@ class Driver:
         
         # Initial setup for RAG mode
         self.setup()
+
+
+    def _initialize_ollama_model_with_progress(self):
+        """Initialize Ollama model with a progress bar."""
+        with tqdm(total=100, desc="Loading Ollama Model", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]") as pbar:
+            for i in range(10):
+                time.sleep(0.5)  # Simulate loading time
+                pbar.update(10)
+        
+        self.llm_query = LLMQueryManager(
+            env_path=self.env_path,
+            json_path=self.json_path,
+            llm_type=self.llm_type,
+            llm_model=self.llm_model,
+            embedding_type=self.embedding_type,
+            embedding_model=self.embedding_model,
+            debug_mode=self.debug_mode
+        )
 
 
     @staticmethod

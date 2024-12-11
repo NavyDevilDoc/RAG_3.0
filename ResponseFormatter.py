@@ -72,14 +72,6 @@ class ResponseFormatter:
                         output_dir: Optional[str] = None) -> str:
             """
             Save responses to file with timestamp in specified directory.
-            
-            Args:
-                responses (List[QAResponse]): Responses to save
-                filename (str): Base filename
-                output_dir (Optional[str]): Output directory path. Defaults to current directory
-                
-            Returns:
-                str: Full path of saved file
             """
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             

@@ -2,8 +2,6 @@
 import os
 from Setup import load_environment_variables, get_document_input, handle_rag_mode, handle_llm_mode
 from Driver import Driver
-from ResponseFormatter import ResponseFormatter
-from TextPreprocessor import TextPreprocessor
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -23,10 +21,10 @@ driver = Driver(
     mode='llm',
     env_path=os.getenv("ENV_PATH"), 
     json_path=os.getenv("JSON_PATH"),
-    llm_type='ollama', 
-    embedding_type='sentence_transformer', 
-    llm_model='llama3.2:latest', 
-    embedding_model='all-mpnet-base-v2', 
+    llm_type='gpt', 
+    embedding_type='gpt', 
+    llm_model='gpt-4o', 
+    embedding_model='text-embedding-3-large', 
     debug_mode=False, 
     doc_input=doc_input,
     doc_name='arwg-index', 

@@ -21,31 +21,11 @@ from typing import Dict
 class ComputeResourceManager:
     """
     Manages compute resources and GPU configuration for deep learning tasks.
-
-    Features:
-    1. GPU detection and configuration
-    2. Memory usage monitoring
-    3. Resource optimization
-    4. Device selection
-    5. CUDA settings management
-
-    Attributes:
-        logger (logging.Logger): Logger instance
-        has_gpu (bool): Whether GPU is available
-        device (torch.device): Selected compute device
-
-    Example:
-        >>> manager = ComputeResourceManager()
-        >>> manager.test_gpu_details()
-        >>> settings = manager.get_compute_settings()
     """
     
     def __init__(self):
         """
         Initialize compute resource manager with logging and device detection.
-
-        Raises:
-            RuntimeError: If CUDA initialization fails
         """
         self.logger = logging.getLogger(__name__)
         self.has_gpu = torch.cuda.is_available()
@@ -55,19 +35,6 @@ class ComputeResourceManager:
     def test_gpu_details(self) -> None:
         """
         Test and display GPU/CUDA configuration and memory details.
-
-        Outputs:
-            - CUDA version and availability
-            - GPU device information
-            - Memory usage statistics
-            - Cache status
-
-        Raises:
-            RuntimeError: If GPU query fails
-
-        Example:
-            >>> manager = ComputeResourceManager()
-            >>> manager.test_gpu_details()
         """
         print("\n=== CUDA Configuration ===")
         print(f"CUDA version: {torch.version.cuda}")
@@ -95,23 +62,6 @@ class ComputeResourceManager:
     def get_compute_settings(self) -> Dict:
         """
         Detect available compute resources and return optimal settings.
-
-        Returns:
-            Dict: Configuration settings including:
-                - temperature (float): Sampling temperature
-                - top_k (int): Top K sampling parameter
-                - top_p (float): Nucleus sampling parameter
-                - num_gpu (int): Number of GPUs to use
-                - num_thread (int): Number of CPU threads
-                - max_tokens (int): Maximum token limit
-
-        Raises:
-            RuntimeError: If resource detection fails
-
-        Example:
-            >>> manager = ComputeResourceManager()
-            >>> settings = manager.get_compute_settings()
-            >>> print(f"Using {settings['num_gpu']} GPUs")
         """
         # Set default parameters for sampling behavior
         settings = {
@@ -150,17 +100,8 @@ class ComputeResourceManager:
     def clear_gpu_memory(self) -> None:
         """
         Clear GPU memory cache if GPU is available.
-
         Performs garbage collection and CUDA cache clearing to free up GPU memory.
-
-        Returns:
-            None
-
-        Example:
-            >>> manager = ComputeResourceManager()
-            >>> # After heavy GPU operations
-            >>> manager.clear_gpu_memory()
-    """
+        """
         if self.has_gpu:
             gc.collect()
             torch.cuda.empty_cache()

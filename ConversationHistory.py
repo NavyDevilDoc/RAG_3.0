@@ -12,6 +12,7 @@ class ConversationHistory:
     def get_history(self):
         return self.messages
 
+
 # Modify the driver class to include conversation history
 def process_query(self, input_text, conversation_history=None):
     if conversation_history is None:
@@ -32,8 +33,8 @@ def process_query(self, input_text, conversation_history=None):
     
     return response, conversation_history
 
-# Modify the main LLM mode section:
 
+# Modify the main LLM mode section:
 driver = Driver()
 if driver.mode == 'llm':
     text_preprocessor = TextPreprocessor()

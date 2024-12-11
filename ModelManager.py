@@ -1,5 +1,3 @@
-# ModelManager.py
-
 """
 ModelManager.py
 
@@ -24,44 +22,20 @@ from SentenceTransformerEmbeddings import SentenceTransformerEmbeddings
 class ModelManager:
     """
     Manages language models and embeddings initialization and operations.
-
-    Features:
-    1. Environment variable loading
-    2. LLM configuration
-    3. Embedding model selection
-    4. API key management
-
-    Attributes:
-        openai_api_key (str): OpenAI API key
-        pinecone_api_key (str): Pinecone API key
-        llm_choices (Dict[str, Any]): Available language models
-        embedding_choices (Dict[str, Any]): Available embedding models
     """
 
     def __init__(self, env_path: str, mode: str= 'rag'):
         """
         Initialize ModelManager with environment variables.
-
-        Args:
-            env_path (str): Path to .env file
-
-        Raises:
-            SystemExit: If required environment variables are missing
         """
         self.mode = mode.lower()
         self.load_environment_variables(env_path)
         self.llm_type = None
 
-
+    
     def load_environment_variables(self, env_path: str) -> None:
         """
         Load environment variables from .env file.
-
-        Args:
-            env_path (str): Path to .env file
-
-        Raises:
-            SystemExit: If required variables are missing
         """
         print("Loading environment variables...")
         load_dotenv(env_path)
@@ -76,17 +50,14 @@ class ModelManager:
 
 
     def get_pinecone_api_key(self) -> str:
-        """
-        Retrieve Pinecone API key.
-
-        Returns:
-            str: Pinecone API key
-        """
+        """Retrieve Pinecone API key"""
+        
+        
         return self.pinecone_api_key
 
 
     def get_openai_api_key(self) -> str:
-        """Retrieve the OpenAI API key."""
+        """Retrieve the OpenAI API key"""
         return self.openai_api_key
 
 
@@ -148,15 +119,6 @@ class ModelManager:
     def determine_embedding_dimensions(self, embeddings: Any) -> int:
         """
         Determine embedding dimensions using sample text.
-
-        Args:
-            embeddings (Any): Embedding model instance
-
-        Returns:
-            int: Embedding dimensions
-
-        Raises:
-            SystemExit: If dimension detection fails
         """
         try:
             text = "This is a text document."
