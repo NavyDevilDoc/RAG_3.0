@@ -15,7 +15,7 @@ Features:
 
 from transformers import AutoTokenizer
 import tiktoken
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Optional
 import numpy as np
 import spacy
 from langchain_core.documents import Document
@@ -65,9 +65,6 @@ class PageChunker:
         Raises:
             ValueError: If model configuration is invalid
             RuntimeError: If tokenizer initialization fails
-
-        Example:
-            >>> chunker = PageChunker("gpt-3.5-turbo", openai_embeddings)
         """
         self.model_name = model_name
         self.uses_tiktoken = False  # Default to False
@@ -150,13 +147,9 @@ class PageChunker:
         if not text.strip():
             return None
         
-        # Clean text to remove problematic characters
-        #cleaned_text = clean_text(text)
-
         try:
             return self.embedding_model.encode(text)
         except Exception as e:
-            #print(f"Error generating embedding for text '{text[:30]}...': {e}")
             return None
         
         

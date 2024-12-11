@@ -9,51 +9,21 @@ This module provides functionality to:
 - Calculate semantic similarity between text segments
 """
 
+from typing import List
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain_core.documents import Document
 from langchain.text_splitter import SpacyTextSplitter
 from sentence_transformers import SentenceTransformer
-
+from OCREnhancedPDFLoader import OCREnhancedPDFLoader
+from TextPreprocessor import TextPreprocessor
 
 class SemanticChunker:
     """
     Chunks text based on semantic similarity and size constraints.
-
-    This class combines traditional size-based chunking with semantic analysis to:
-    1. Split text into initial chunks
-    2. Calculate semantic similarity between chunks
-    3. Merge similar chunks while respecting size limits
-    4. Preserve semantic coherence in final chunks
-
-    Attributes:
-        chunk_size (int): Maximum size of each chunk
-        chunk_overlap (int): Characters overlapping between chunks
-        similarity_threshold (float): Minimum similarity to merge chunks
-        separator (str): Chunk separation character
-        sentence_model (SentenceTransformer): Model for embeddings
-        text_splitter (SpacyTextSplitter): Spacy-based text splitter
-
-    Example:
-        >>> chunker = SemanticChunker(
-        ...     chunk_size=200,
-        ...     similarity_threshold=0.85
-        ... )
-        >>> chunks = chunker.get_semantic_chunks(documents)
     """
 
     def __init__(self, chunk_size=200, chunk_overlap=0, similarity_threshold=0.9, separator=" ", sentence_model=None):
-        """Initialize the semantic chunker with configurable parameters.
-
-        Args:
-            chunk_size (int): Maximum size of each chunk in characters.
-            chunk_overlap (int): Number of overlapping characters between chunks.
-            similarity_threshold (float): Minimum cosine similarity score (0-1) to combine chunks.
-            separator (str): Character used to separate chunks.
-            sentence_model: Optional embedding model for similarity calculations.
-        
-        Raises:
-            ValueError: If any initialization parameter is invalid.
-        """
+        """Initialize the semantic chunker with configurable parameters."""
         if chunk_size <= 0:
             raise ValueError("chunk_size must be a positive integer.")
         if not (0 <= similarity_threshold <= 1):
@@ -63,7 +33,7 @@ class SemanticChunker:
         self.chunk_overlap = chunk_overlap
         self.similarity_threshold = similarity_threshold
         self.separator = separator
-        self.sentence_model = sentence_model or SentenceTransformer('multi-qa-mpnet-base-dot-v1')  # Default model for flexibility
+        self.sentence_model = sentence_model or SentenceTransformer('multi-qa-mpnet-base-dot-v1')
         self.text_splitter = SpacyTextSplitter(
             chunk_size=self.chunk_size - self.chunk_overlap,
             chunk_overlap=self.chunk_overlap,
@@ -73,19 +43,6 @@ class SemanticChunker:
     def _enforce_size_immediately(self, text):
         """
         Split text into chunks while strictly enforcing size limits.
-
-        Args:
-            text (str): Input text to chunk
-
-        Returns:
-            List[str]: List of text chunks
-
-        Raises:
-            ValueError: If input text is empty or invalid
-
-        Example:
-            >>> text = "Long document text here..."
-            >>> chunks = chunker._enforce_size_immediately(text)
         """
         if not text.strip():
             raise ValueError("Input 'text' cannot be empty or whitespace.")
@@ -111,27 +68,6 @@ class SemanticChunker:
     def get_semantic_chunks(self, documents):
         """
         Process documents into semantically coherent chunks.
-
-        Workflow:
-        1. Split documents into base chunks
-        2. Generate embeddings for chunks
-        3. Group similar chunks while respecting size limits
-        4. Finalize and return processed chunks
-
-        Args:
-            documents (List[Document]): Input documents to process
-
-        Returns:
-            List[Document]: Semantically grouped document chunks
-
-        Raises:
-            ValueError: If documents list is empty
-            RuntimeError: If embedding generation fails
-
-        Example:
-            >>> docs = [Document(page_content="Long text here...")]
-            >>> chunks = chunker.get_semantic_chunks(docs)
-            >>> print(f"Generated {len(chunks)} semantic chunks")
         """
         # Initial document splitting
         base_chunks = self.text_splitter.split_documents(documents)
@@ -146,7 +82,7 @@ class SemanticChunker:
                 current_embedding = chunk_embeddings[i].reshape(1, -1)
                 continue
 
-            # Step 3: Calculate similarity and combine if appropriate
+            # Calculate similarity and combine if appropriate
             similarity = cosine_similarity(current_embedding, chunk_embeddings[i].reshape(1, -1))[0][0]
             combined_content = " ".join([doc.page_content for doc in current_group] + [base_chunk.page_content])
 
@@ -167,20 +103,6 @@ class SemanticChunker:
     def _finalize_chunk_group(self, group):
         """
         Process a group of related chunks into final documents.
-
-        Args:
-            group (List[Document]): Group of semantically related documents
-
-        Returns:
-            List[Document]: Processed and size-constrained documents
-
-        Raises:
-            ValueError: If group is empty
-            RuntimeError: If chunk processing fails
-
-        Example:
-            >>> chunks = chunker._finalize_chunk_group(document_group)
-            >>> print(f"Finalized {len(chunks)} chunks")
         """
         processed_chunks = []
         content = " ".join([doc.page_content for doc in group])
@@ -190,3 +112,24 @@ class SemanticChunker:
             processed_chunks.append(Document(page_content=chunk, metadata=group[0].metadata))
         
         return processed_chunks
+    
+
+    def process_document(self, source_path: str, enable_preprocessing: bool = False) -> List[Document]:
+        """Process document using semantic chunking strategy."""
+        print("Performing semantic chunking...")
+        
+        # Load and preprocess document text
+        ocr_loader = OCREnhancedPDFLoader(source_path)
+        text_preprocessor = TextPreprocessor()
+        raw_documents = ocr_loader.load()
+        processed_documents = [
+            Document(
+                page_content=text_preprocessor.preprocess(doc.page_content) if enable_preprocessing else doc.page_content,
+                metadata=doc.metadata
+            ) for doc in raw_documents
+        ]
+        
+        # Perform semantic chunking
+        documents = self.get_semantic_chunks(processed_documents)
+        print(f"Number of semantic chunks: {len(documents)}")
+        return documents

@@ -69,18 +69,8 @@ class TextPreprocessor:
             raise
 
     def format_text(self, text: str, line_length: int = 100) -> str:
-        """Format text by adding newlines after colons and wrapping text.
+        """Format text by adding newlines after colons and wrapping text."""
         
-        Args:
-            text (str): Text to be formatted.
-            line_length (int): Maximum line length before wrapping (default: 100).
-
-        Returns:
-            str: Formatted text with newlines after colons and word-wrapped.
-            
-        Raises:
-            Exception: If text formatting fails.
-        """
         try:
             # Add newline after colons
             text = text.replace(':', ':\n')
@@ -115,8 +105,10 @@ class TextPreprocessor:
     def count_tokens(self, text: str) -> int:
         """Count the number of tokens in the text."""
         return len(word_tokenize(text))
-    
+
+'''
 sample_text = "This is a sample text to test the format_text function. It should wrap text correctly at the specified line length. If the problem is not solved, review the solution and try again."
 text_preprocessor = TextPreprocessor()
 formatted_text = text_preprocessor.format_text(sample_text, line_length=100)
 print(formatted_text)
+'''

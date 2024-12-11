@@ -1,5 +1,3 @@
-# ChunkingManager.py 
-
 """
 ChunkingManager.py
 A module for managing different document chunking strategies.
@@ -11,13 +9,21 @@ This module provides functionality to:
 """
 
 from typing import List, Any
+from enum import Enum
 from langchain_core.documents import Document
 from SemanticChunker import SemanticChunker
 from PageChunker import PageChunker
 from HierarchicalChunker import HierarchicalChunker
 from OCREnhancedPDFLoader import OCREnhancedPDFLoader
 from TextPreprocessor import TextPreprocessor
-from ChunkingMethod import ChunkingMethod
+
+class ChunkingMethod(Enum):
+    """
+    Supported document chunking methods.
+    """
+    SEMANTIC = "semantic"
+    PAGE = "page"
+    HIERARCHICAL = "hierarchical" 
 
 
 def process_document(
@@ -34,31 +40,6 @@ def process_document(
 
     """
     Process documents using specified chunking method.
-
-    Args:
-        source_path (str): Path to source document
-        method (ChunkingMethod): Chunking strategy to use
-        enable_preprocessing (bool): Whether to preprocess text
-        chunk_size (int): Size of text chunks
-        chunk_overlap (int): Overlap between chunks
-        similarity_threshold (float): Threshold for semantic similarity
-        max_tokens (int): Maximum tokens per chunk
-        model_name (Optional[str]): Name of language model
-        embedding_model (Optional[Any]): Model for embeddings
-
-    Returns:
-        List[Document]: Processed document chunks
-
-    Raises:
-        ValueError: If embedding model is missing or method invalid
-        RuntimeError: If document processing fails
-
-    Example:
-        >>> chunks = process_document(
-        ...     "doc.pdf",
-        ...     ChunkingMethod.SEMANTIC,
-        ...     embedding_model=embeddings
-        ... )
     """
 
     if embedding_model is None:
@@ -107,19 +88,6 @@ def _semantic_chunking(
 
     """
     Process document using semantic chunking strategy.
-
-    Args:
-        source_path (str): Path to source document
-        enable_preprocessing (bool): Whether to preprocess text
-        chunk_size (int): Size of chunks
-        chunk_overlap (int): Overlap between chunks
-        similarity_threshold (float): Semantic similarity threshold
-
-    Returns:
-        List[Document]: Semantically chunked documents
-
-    Raises:
-        Exception: If semantic chunking fails
     """
 
     print("Performing semantic chunking...")
@@ -156,34 +124,6 @@ def _page_chunking(
 
     """
     Process document using page-based chunking strategy.
-
-    This method:
-    1. Splits document by pages
-    2. Optionally preprocesses text
-    3. Calculates token counts per page
-    4. Applies embeddings for retrieval
-
-    Args:
-        source_path (str): Path to source document
-        preprocess (bool): Whether to preprocess text
-        model_name (str): Name of language model
-        embedding_model (Any): Model for generating embeddings
-
-    Returns:
-        List[Document]: List of page-chunked documents with metadata
-
-    Raises:
-        ValueError: If document or model parameters are invalid
-        RuntimeError: If chunking process fails
-
-    Example:
-        >>> chunks = _page_chunking(
-        ...     "doc.pdf",
-        ...     preprocess=True,
-        ...     model_name="gpt-3.5-turbo",
-        ...     embedding_model=embeddings
-        ... )
-        >>> print(f"Processed {len(chunks)} pages")
     """
 
     print("Processing document by pages...")

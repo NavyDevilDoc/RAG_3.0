@@ -1,6 +1,8 @@
 # LLMQueryManager.py
 import os
 import json
+import time
+from tqdm import tqdm
 from datetime import datetime
 from typing import Any
 from enum import Enum
@@ -44,6 +46,20 @@ class LLMQueryManager:
         self.max_tokens_per_message = 1000 
         self.max_context_tokens = 8000  
         
+        if self.llm_type.lower() == 'ollama':
+            self._initialize_ollama_model_with_progress()
+        else:
+            self._initialize_model()
+
+    def _initialize_ollama_model_with_progress(self):
+        """Initialize Ollama model with a progress bar."""
+        with tqdm(total=100, desc="Loading Ollama Model", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]") as pbar:
+            for i in range(10):
+                time.sleep(0.5)  # Simulate loading time
+                pbar.update(10)
+        
+        self._initialize_model()
+
 
     def _initialize_model(self) -> Any:
         """Initialize the language model."""
