@@ -21,10 +21,10 @@ doc_input = get_document_input(use_manual_input, pdf_folder_path)
 Available Ollama LLMs:
     llama3.2:latest
     llama3.2-vision:latest
-    llama3.3:latest (can't run this one without more memory)
     llama3.3:70b-instruct-q2_K
     codestral:latest
     codellama:13b
+    granite3.1-dense:8b (use with granite-embedding:latest as the embedding model)
     granite-code:20b
     granite-code:8b
 """
@@ -36,9 +36,9 @@ driver = Driver(
     env_path=os.getenv("ENV_PATH"), 
     json_path=os.getenv("JSON_PATH"),
     llm_type='ollama',
-    embedding_type='sentence_transformer',
-    llm_model='llama3.2:latest',
-    embedding_model='all-mpnet-base-v2',
+    embedding_type='ollama',
+    llm_model='granite3.1-dense:8b',
+    embedding_model='granite-embedding:latest',
     debug_mode=False, 
     doc_input=doc_input,
     doc_name='test-index', 
@@ -53,5 +53,4 @@ driver = Driver(
 if driver.mode == 'rag':
     handle_rag_mode(driver)
 elif driver.mode == 'llm':
-    clear_history = False
-    handle_llm_mode(driver, clear_history)
+    handle_llm_mode(driver)
