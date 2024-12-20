@@ -9,7 +9,7 @@ This module provides functionality to:
 - Calculate semantic similarity between text segments
 """
 
-from typing import List
+from typing import List, Tuple
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain_core.documents import Document
 from langchain.text_splitter import SpacyTextSplitter

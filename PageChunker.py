@@ -1,5 +1,3 @@
-# PageChunker.py
-
 """
 PageChunker.py
 
@@ -15,7 +13,7 @@ Features:
 
 from transformers import AutoTokenizer
 import tiktoken
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import numpy as np
 import spacy
 from langchain_core.documents import Document
@@ -25,54 +23,21 @@ from TextPreprocessor import TextPreprocessor
 nlp = spacy.load("en_core_web_sm")
 
 class PageChunker:
-
     """
     Handles document chunking at the page level with token counting.
-
-    Features:
-    1. Multiple tokenizer support
-    2. Page-level processing
-    3. Token count validation
-    4. Blank page detection
-    5. OCR integration
-
-    Attributes:
-        BLANK_THRESHOLD (int): Minimum characters for non-blank page
-        model_name (str): Name of language model
-        tokenizer (Any): Tokenizer instance
-        uses_tiktoken (bool): Whether using tiktoken
-        uses_basic_tokenizer (bool): Whether using basic tokenizer
-        embedding_model (Any): Model for embeddings
-
-    Example:
-        >>> chunker = PageChunker(
-        ...     model_name="gpt-3.5-turbo",
-        ...     embedding_model=embeddings
-        ... )
-        >>> chunks = chunker.process_document("doc.pdf")
     """
 
     BLANK_THRESHOLD = 10  # Minimum character count to consider a page non-blank
 
     def __init__(self, model_name=None, embedding_model=None):
-        """
-        Initialize page chunker with specified models.
-        
-        Args:
-            model_name (Optional[str]): Name of language model
-            embedding_model (Optional[Any]): Embedding model instance
-
-        Raises:
-            ValueError: If model configuration is invalid
-            RuntimeError: If tokenizer initialization fails
-        """
+        """Initialize page chunker with specified models."""
         self.model_name = model_name
         self.uses_tiktoken = False  # Default to False
         self.uses_basic_tokenizer = False  # Flag for Ollama models
 
         # List of models supported by tiktoken
         tiktoken_supported_models = [
-            "gpt-3.5-turbo", "gpt-4", "text-davinci-003", "gpt-4o", "text-embedding-ada-002", "text-embedding-3-large"
+            "gpt-3.5-turbo", "gpt-4", "text-davinci-003", "gpt-4o", "text-embedding-ada-002", "text-embedding-3-large, text-embedding-3-small"
         ]
 
         try:
@@ -99,27 +64,13 @@ class PageChunker:
 
 
     def _is_blank_page(self, text: str) -> bool:
-        """Check if page is blank or contains only whitespace/special characters.
-        
-        Args:
-            text (str): Page content to analyze.
-            
-        Returns:
-            bool: True if page is considered blank, False otherwise.
-        """
+        """Check if page is blank or contains only whitespace/special characters."""
         cleaned_text = text.strip().replace('\n', '').replace('\r', '').replace('\t', '')
         return len(cleaned_text) < self.BLANK_THRESHOLD
 
 
     def _count_tokens(self, text: str) -> int:
-        """Count tokens in text using the specified tokenizer.
-        
-        Args:
-            text (str): Text to tokenize.
-            
-        Returns:
-            int: Number of tokens in text, 0 if error occurs.
-        """
+        """Count tokens in text using the specified tokenizer. """
         try:
             if self.uses_tiktoken:
                 # Use tiktoken to count tokens
@@ -136,14 +87,7 @@ class PageChunker:
 
 
     def _get_page_embedding(self, text: str) -> Optional[np.ndarray]:
-        """Generate embedding vector for page text.
-        
-        Args:
-            text (str): Text to embed.
-            
-        Returns:
-            Optional[np.ndarray]: Embedding vector, or None if error occurs.
-        """
+        """Generate embedding vector for page text."""
         if not text.strip():
             return None
         
@@ -154,15 +98,8 @@ class PageChunker:
         
         
     def _analyze_page(self, text: str) -> dict:
-        """Perform detailed analysis of page content.
+        """Perform detailed analysis of page content."""
         
-        Args:
-            text (str): Page content to analyze.
-            
-        Returns:
-            dict: Statistics including character count, token count, sentence count, word count,
-                  embedding dimension, and OCR status.
-        """
         try:
             embedding = self._get_page_embedding(text)
             return {

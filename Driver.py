@@ -1,6 +1,8 @@
 # Driver.py - Driver class for RAG model execution
 
 import os
+import json
+from datetime import datetime
 from RAGInitializer import EmbeddingType, RAGConfig, initialize_rag_components
 from CombinedProcessor import CombinedProcessor, ChunkingMethod
 from DatastoreInitializer import StorageType
@@ -8,7 +10,7 @@ from QuestionInitializer import QuestionInitializer
 from TextPreprocessor import TextPreprocessor
 from ResponseFormatter import QAResponse
 from LLMQueryManager import LLMQueryManager, LLMType
-from typing import List
+from typing import List, Tuple
 from tqdm import tqdm
 import time
 import warnings
@@ -34,7 +36,7 @@ class Driver:
         use_ground_truth: bool = False,
         debug_mode: bool = False,
         mode: str = 'rag',
-        process_questions: bool = True
+        process_questions: bool = True,
     ):
         """Initialize RAG driver based on mode."""
         self.mode = mode.lower()
@@ -48,6 +50,7 @@ class Driver:
         self.llm_model = llm_model
         self.embedding_model = embedding_model
         self.debug_mode = debug_mode
+        
         
         # Initialize LLM query manager for direct queries
         if self.mode == 'llm':
@@ -183,16 +186,14 @@ class Driver:
             dimensions=self.dimensions,
             chunking_method=self._convert_chunking_method(self.chunking_method),
             storage_type=self._convert_storage_type(self.storage_type),
-            model_name=self.selected_llm
+            model_name=self.selected_llm,
         )
-        
         self.datastore = processor.process_and_store(self.doc_input)
         
     def process_questions(self, questions: List[str]) -> List[QAResponse]:
         """Process questions and return QAResponse objects."""
         if not self.datastore:
             raise RuntimeError("Setup must be called before processing questions")
-        
         if not questions:
             raise ValueError("Questions list cannot be empty")
                 
@@ -201,7 +202,6 @@ class Driver:
             model=self.model,
             embedding_model=self.selected_embedding_model
         )
-        
         try:
             # Get responses and handle tuple return
             result = processor.process_questions(
@@ -209,13 +209,11 @@ class Driver:
                 template_name=self.template_name,     
                 use_ground_truth=self.use_ground_truth[0] if isinstance(self.use_ground_truth, tuple) else self.use_ground_truth
             )
-            
             # Unpack tuple if needed
             if isinstance(result, tuple):
                 results = result[0]  # Get just the results, ignore processing time
             else:
                 results = result
-                
             # Ensure results is a list
             if not isinstance(results, list):
                 print(f"Warning: Invalid results format after unpacking: {type(results)}")
@@ -228,7 +226,6 @@ class Driver:
                 if not isinstance(result, dict):
                     print(f"Warning: Invalid result format: {type(result)}")
                     continue
-                    
                 try:
                     response = QAResponse(
                         question=question,
@@ -249,7 +246,6 @@ class Driver:
                 except KeyError as e:
                     print(f"Warning: Missing required field in result: {e}")
                     continue
-                    
             return responses
             
         except Exception as e:
@@ -280,7 +276,36 @@ class Driver:
     def clear_conversation_history(self):
         """Clear the conversation history in LLM mode."""
         if self.mode == 'llm' and self.llm_query:
+            # Save current conversation history with a user-defined name
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_name = f"conversation_history_{timestamp}.json"
+            user_input = input(f"Enter a name for the conversation history file (default: {default_name}): ")
+            user_named_file = os.path.join(self.llm_query.json_path, user_input or default_name)  # Use json_path directly
+            
+            # Copy contents of conversation_history.json to user-named file
+            if os.path.exists(self.llm_query.history_file):
+                with open(self.llm_query.history_file, 'r', encoding='utf-8') as src:
+                    conversation_history = json.load(src)
+                with open(user_named_file, 'w', encoding='utf-8') as dst:
+                    json.dump(conversation_history, dst, indent=2)
+            else:
+                print(f"Warning: {self.llm_query.history_file} does not exist. No history to copy.")
+            
+            # Clear the conversation history
             self.llm_query.conversation_history = []
+            self.llm_query.save_history()
+            
+            return user_input or default_name  # Return the user-defined name
+
+
+    def load_existing_conversation(self, file_path: str):
+        """Load an existing conversation history from a specified file."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                self.llm_query.conversation_history = json.load(f)
+                self.llm_query.save_history()
+        except Exception as e:
+            print(f"Error loading existing conversation: {e}")
 
 
     def get_conversation_history(self):

@@ -1,5 +1,5 @@
 # HierarchicalChunker.py
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from langchain_core.documents import Document
 from PageChunker import PageChunker
 import spacy
