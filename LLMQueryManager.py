@@ -40,7 +40,13 @@ class LLMQueryManager:
         self.debug_mode = debug_mode
         self.model = self._initialize_model()
         self.conversation_history = []
-        self.history_file = os.path.join(os.path.dirname(json_path), "conversation_history.json")
+        self.history_file = os.path.join(self.json_path, "conversation_history.json")
+
+        # Create the conversation_history.json file if it does not exist
+        if not os.path.exists(self.history_file):
+            with open(self.history_file, 'w', encoding='utf-8') as f:
+                json.dump([], f)
+
         self.conversation_history = self.load_history()
         self.max_history_length = 50  
         self.max_tokens_per_message = 1000 
@@ -51,13 +57,19 @@ class LLMQueryManager:
         else:
             self._initialize_model()
 
+
+    def set_history_file(self, file_path: str):
+        """Set a custom history file path."""
+        self.history_file = file_path
+        self.conversation_history = self.load_history()
+
+
     def _initialize_ollama_model_with_progress(self):
         """Initialize Ollama model with a progress bar."""
         with tqdm(total=100, desc="Loading Ollama Model", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]") as pbar:
             for i in range(10):
                 time.sleep(0.5)  # Simulate loading time
                 pbar.update(10)
-        
         self._initialize_model()
 
 
@@ -67,7 +79,6 @@ class LLMQueryManager:
             "selected_llm_type": self.llm_type,
             "selected_embedding_scheme": self.embedding_type  
         }
-        
         model, _, _, self.selected_llm, self.selected_embedding_model = self.model_manager.validate_and_load_models(
             config=config,
             select_llm=self.llm_model,
@@ -103,7 +114,6 @@ class LLMQueryManager:
         while (len(self.conversation_history) >= self.max_history_length or
                self._estimate_total_tokens() >= self.max_context_tokens):
             self.conversation_history.pop(0)  # Remove oldest message
-            
         # Add new message
         self.conversation_history.append({
             "role": role,
@@ -129,22 +139,17 @@ class LLMQueryManager:
     def ask(self, question: str, use_history: bool = True) -> str:
         try:
             self.add_to_history("user", question)
-            
             # Include history in prompt if enabled
             prompt = (
                 self.get_conversation_context() if use_history and self.conversation_history 
                 else question
             )
-            
             chain = self.model | self.parser
             response = chain.invoke(prompt)
-            
             self.add_to_history("assistant", response)
-            
             if self.debug_mode:
                 print(f"\nModel: {self.selected_llm}")
                 print(f"History length: {len(self.conversation_history)}")
-                
             return response
             
         except Exception as e:

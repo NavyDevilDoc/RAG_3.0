@@ -1,5 +1,3 @@
-# DatastoreInitializer.py
-
 """
 DatastoreInitializer.py
 

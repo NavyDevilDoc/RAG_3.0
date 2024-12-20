@@ -6,7 +6,7 @@ Classes:
     CombinedProcessor: Handles document processing and storage with various RAG components.
 """
 
-from typing import Union, List, Any
+from typing import Union, List, Any, Tuple
 from pathlib import Path
 import sys
 from ChunkingInitializer import ChunkingInitializer
@@ -24,10 +24,8 @@ class CombinedProcessor:
                  chunking_method: ChunkingMethod = ChunkingMethod.SEMANTIC,
                  enable_preprocessing: bool = False,
                  storage_type: StorageType = StorageType.PINECONE_NEW,
-                 model_name: str = None):
-        """
-        Initialize document processor with configuration and RAG components.
-        """
+                 model_name: str = None,
+                 ):
         self.doc_name = doc_name
         self.model_manager = model_manager
         self.embedding_model = embedding_model
@@ -39,10 +37,7 @@ class CombinedProcessor:
         self.model_name = model_name
         
     def process_and_store(self, source_path: Union[str, List[str]]) -> None:
-        """
-        Process documents and store them in the vector database.
-        """
-        
+        """Process documents and store them in the vector database."""
         # Skip document processing for existing Pinecone index
         if self.storage_type == StorageType.PINECONE_EXISTING:
             print(f"\nConnecting to existing Pinecone index '{self.doc_name}'...")
@@ -62,7 +57,6 @@ class CombinedProcessor:
                 
                 print(f"Successfully connected to existing index '{self.doc_name}'")
                 return datastore
-                
             except Exception as e:
                 print(f"Error connecting to existing index: {e}")
                 sys.exit(1)
@@ -77,9 +71,8 @@ class CombinedProcessor:
                 chunking_method=self.chunking_method,
                 enable_preprocessing=self.enable_preprocessing,
                 model_name=self.model_name,
-                embedding_model=self.embedding_model
+                embedding_model=self.embedding_model,
             )
-            
             try:
                 documents = processor.process()
                 all_documents.extend(documents)

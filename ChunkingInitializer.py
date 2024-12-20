@@ -8,7 +8,7 @@ This module handles the complete document processing pipeline including:
 - Document chunking with various strategies
 """
 
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Tuple
 from langchain_core.documents import Document
 from sentence_transformers import SentenceTransformer
 from OCREnhancedPDFLoader import OCREnhancedPDFLoader
@@ -28,7 +28,8 @@ class ChunkingInitializer:
                  chunk_overlap: int = 50,
                  similarity_threshold: float = 0.85,
                  model_name: Optional[str] = None,
-                 embedding_model: Optional[Any] = None):
+                 embedding_model: Optional[Any] = None,
+                 ):
         """
         Initialize chunking processor with configuration parameters.
         """
@@ -107,7 +108,7 @@ class ChunkingInitializer:
                 chunk_overlap=self.chunk_overlap,
                 similarity_threshold=self.similarity_threshold,
                 model_name=self.model_name,
-                embedding_model=self.embedding_model
+                embedding_model=self.embedding_model,
             )
             
             print(f"Processed {len(documents)} document chunks")

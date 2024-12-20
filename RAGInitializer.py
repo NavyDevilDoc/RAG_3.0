@@ -9,6 +9,7 @@ from LLMQueryManager import LLMType
 class EmbeddingType(Enum):
     GPT = "gpt" 
     SENTENCE_TRANSFORMER = "sentence_transformer"
+    OLLAMA = "ollama"
 
 @dataclass
 class RAGConfig:

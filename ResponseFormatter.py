@@ -18,14 +18,15 @@ class QAResponse:
 
 class ResponseFormatter:
     """Formats RAG responses for user-friendly output."""
-    
     def __init__(self, debug_mode: bool = False):
         self.debug_mode = debug_mode
         self.text_processor = TextPreprocessor()
         
+
     def format_response(self, qa_response: QAResponse) -> str:
         """Format single question-answer pair based on mode."""
         return self._format_debug(qa_response) if self.debug_mode else self._format_user(qa_response)
+
 
     def _format_user(self, qa_response: QAResponse) -> str:
         """Format response for end users."""
@@ -36,6 +37,7 @@ class ResponseFormatter:
         formatted_answer = self.text_processor.format_text(qa_response.answer, line_length=100)
         output.append(f"\nAnswer: {formatted_answer}")
         return "\n".join(output)
+
 
     def _format_debug(self, qa_response: QAResponse) -> str:
         """Format response with debug information."""
@@ -60,36 +62,31 @@ class ResponseFormatter:
                 
         return "\n".join(output)
     
+
     def format_batch_responses(self, responses: List[QAResponse]) -> str:
         """Format multiple question-answer pairs."""
         return "\n".join(
             self.format_response(response) for response in responses
         )
 
+
     def save_to_file(self, 
                         responses: List[QAResponse], 
                         filename: str,
                         output_dir: Optional[str] = None) -> str:
-            """
-            Save responses to file with timestamp in specified directory.
-            """
+            """Save responses to file with timestamp in specified directory."""
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            
             # Use current directory if none specified
             if output_dir is None:
                 output_dir = os.getcwd()
-                
             # Create directory if it doesn't exist
             Path(output_dir).mkdir(parents=True, exist_ok=True)
-                
             # Construct full file path
             full_path = os.path.join(
                 output_dir, 
                 f"{filename}_{timestamp}.txt"
             )
-            
             with open(full_path, "w", encoding='utf-8') as f:
                 f.write(self.format_batch_responses(responses))
-                
             print(f"Responses saved to: {full_path}")
             return full_path

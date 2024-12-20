@@ -14,8 +14,6 @@ from langchain_core.documents import Document
 from SemanticChunker import SemanticChunker
 from PageChunker import PageChunker
 from HierarchicalChunker import HierarchicalChunker
-from OCREnhancedPDFLoader import OCREnhancedPDFLoader
-from TextPreprocessor import TextPreprocessor
 
 class ChunkingMethod(Enum):
     """
@@ -35,7 +33,7 @@ def process_document(
     similarity_threshold: float = 0.85,
     max_tokens: int = 8000,
     model_name = None,
-    embedding_model=None
+    embedding_model=None,
 ) -> List[Document]:
 
     """
@@ -55,10 +53,12 @@ def process_document(
                 similarity_threshold,
             )
         elif method == ChunkingMethod.PAGE:
-            return _page_chunking(source_path, 
-                                  enable_preprocessing, 
-                                  model_name, 
-                                  embedding_model)
+            return _page_chunking(
+                source_path, 
+                enable_preprocessing, 
+                model_name, 
+                embedding_model,
+            )
         
         elif method == ChunkingMethod.HIERARCHICAL:
             return _hierarchical_chunking(
@@ -68,7 +68,7 @@ def process_document(
                 chunk_overlap,
                 similarity_threshold,
                 model_name,
-                embedding_model
+                embedding_model,
             )
         else:
             raise ValueError(f"Unsupported chunking method: {method}")
@@ -85,11 +85,9 @@ def _semantic_chunking(
     chunk_overlap: int,
     similarity_threshold: float,
 ) -> List[Document]:
-
     """
     Process document using semantic chunking strategy.
     """
-
     print("Performing semantic chunking...")
     semantic_chunker = SemanticChunker(
         chunk_size=chunk_size,
@@ -98,19 +96,7 @@ def _semantic_chunking(
         separator=" "
     )
     
-    # Load and preprocess document text if needed
-    ocr_loader = OCREnhancedPDFLoader(source_path)
-    text_preprocessor = TextPreprocessor()
-    raw_documents = ocr_loader.load()
-    processed_documents = [
-        Document(
-            page_content=text_preprocessor.preprocess(doc.page_content) if enable_preprocessing else doc.page_content,
-            metadata=doc.metadata
-        ) for doc in raw_documents
-    ]
-    
-    # Perform semantic chunking and return results
-    documents = semantic_chunker.get_semantic_chunks(processed_documents)
+    documents = semantic_chunker.process_document(source_path, enable_preprocessing)
     print(f"Number of semantic chunks: {len(documents)}")
     return documents
 
@@ -119,13 +105,11 @@ def _page_chunking(
         source_path: str, 
         preprocess: bool, 
         model_name: str, 
-        embedding_model: Any
+        embedding_model: Any,
         ) -> List[Document]:
-
     """
     Process document using page-based chunking strategy.
     """
-
     print("Processing document by pages...")
     # Pass the pre-initialized embedding model to PageChunker
     page_chunker = PageChunker(model_name=model_name, embedding_model=embedding_model)
@@ -145,7 +129,7 @@ def _hierarchical_chunking(
     chunk_overlap: int,
     similarity_threshold: float,
     model_name: str,
-    embedding_model: Any
+    embedding_model: Any,
 ) -> List[Document]:
     """Process document using hierarchical chunking strategy."""
     print("Performing hierarchical chunking...")
@@ -159,7 +143,7 @@ def _hierarchical_chunking(
     
     result = hierarchical_chunker.process_document(
         source_path, 
-        preprocess=enable_preprocessing
+        preprocess=enable_preprocessing,
     )
     
     # Flatten hierarchical structure for compatibility

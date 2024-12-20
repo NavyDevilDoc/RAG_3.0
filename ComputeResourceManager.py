@@ -19,23 +19,16 @@ import logging
 from typing import Dict
 
 class ComputeResourceManager:
-    """
-    Manages compute resources and GPU configuration for deep learning tasks.
-    """
-    
+    """Manages compute resources and GPU configuration for deep learning tasks."""
     def __init__(self):
-        """
-        Initialize compute resource manager with logging and device detection.
-        """
+        """Initialize compute resource manager with logging and device detection."""
         self.logger = logging.getLogger(__name__)
         self.has_gpu = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.has_gpu else "cpu")
 
 
     def test_gpu_details(self) -> None:
-        """
-        Test and display GPU/CUDA configuration and memory details.
-        """
+        """Test and display GPU/CUDA configuration and memory details."""
         print("\n=== CUDA Configuration ===")
         print(f"CUDA version: {torch.version.cuda}")
         print(f"CUDA available: {self.has_gpu}")
@@ -60,16 +53,13 @@ class ComputeResourceManager:
 
 
     def get_compute_settings(self) -> Dict:
-        """
-        Detect available compute resources and return optimal settings.
-        """
+        """Detect available compute resources and return optimal settings."""
         # Set default parameters for sampling behavior
         settings = {
             'temperature': 0.1,
             'top_k': 10,
             'top_p': 0.2
         }
-        
         try:
             if self.has_gpu:
                 # If GPU available, print device name and apply GPU-optimized settings
@@ -97,11 +87,9 @@ class ComputeResourceManager:
             })
             return settings
 
+
     def clear_gpu_memory(self) -> None:
-        """
-        Clear GPU memory cache if GPU is available.
-        Performs garbage collection and CUDA cache clearing to free up GPU memory.
-        """
+        """Clear GPU memory cache if GPU is available. Performs garbage collection and CUDA cache clearing to free up GPU memory."""
         if self.has_gpu:
             gc.collect()
             torch.cuda.empty_cache()

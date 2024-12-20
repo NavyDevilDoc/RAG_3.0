@@ -78,7 +78,7 @@ class QuestionAnswerer:
             })
 
             processor = TextPreprocessor()
-            print(f"Best Response: {processor.format_text(best_response,100)}")
+            #print(f"Best Response: {processor.format_text(best_response,100)}")
             print(f"Confidence Score: {confidence_score:.2f}")
             print(f"Quality Scores: {quality_scores}\n")
 

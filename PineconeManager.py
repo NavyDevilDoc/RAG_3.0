@@ -12,28 +12,16 @@ class PineconeManager:
     def __init__(self, pc, api_key, dimensions, selected_embedding_model):
         """
         Initialize the PineconeManager with Pinecone client and configurations.
-
-        Args:
-            pc: Pinecone client instance.
-            api_key: Pinecone API key.
-            dimensions: Dimensionality of the embeddings.
-            selected_embedding_model: Embedding model name for index naming.
         """
         self.pc = pc
         self.api_key = api_key
         self.dimensions = dimensions
         self.selected_embedding_model = selected_embedding_model
 
+
     def setup_index(self, index_name, spec, timeout=300):
         """
         Create or reset a Pinecone index.
-
-        Args:
-            index_name: Name of the index.
-            spec: ServerlessSpec object for Pinecone index.
-            timeout: Maximum time (in seconds) to wait for readiness.
-
-        Returns:
             Pinecone index object.
         """
         try:
@@ -58,37 +46,34 @@ class PineconeManager:
             print(f"\nError setting up Pinecone index: {e}")
             sys.exit(1)
 
+
     def setup_datastore(self, data_storage, documents, embeddings, index_name):
         """
         Configure the datastore based on the specified storage method.
-
-        Args:
-            data_storage: Storage option (0: New, 1: Add, 2: Existing, 3: Local).
-            documents: List of document objects to store.
-            embeddings: Embedding model for vectorizing documents.
-            index_name: Name of the Pinecone index.
-
-        Returns:
-            Configured datastore object.
         """
         try:
             if data_storage == PINECONE_NEW:
                 print(f"\nUploading documents to new Pinecone index '{index_name}'")
                 datastore = PineconeVectorStore.from_documents(documents, embedding=embeddings, index_name=index_name)
+
             elif data_storage == PINECONE_ADD:
                 print(f"\nAdding documents to existing Pinecone index '{index_name}'")
                 datastore = PineconeVectorStore.from_existing_index(index_name, embeddings)
                 datastore.add_documents(documents)
+
             elif data_storage == PINECONE_EXISTING:
                 print(f"\nUsing existing Pinecone index '{index_name}'")
                 datastore = PineconeVectorStore.from_existing_index(index_name, embeddings)
+
             elif data_storage == LOCAL_STORAGE:
                 print("\nStoring documents locally in memory")
                 datastore = DocArrayInMemorySearch.from_documents(documents, embeddings)
+
             else:
                 raise ValueError(f"Invalid data_storage option: {data_storage}")
             print("\nDatastore successfully configured.")
             return datastore
+        
         except Exception as e:
             print(f"Error setting up datastore: {e}")
             sys.exit(1)
