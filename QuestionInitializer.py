@@ -62,7 +62,7 @@ class QuestionInitializer:
             results = self.question_answerer.answer_questions(
                 questions,
                 self.datastore,
-                use_ground_truth,  # Pass use_ground_truth flag
+                use_ground_truth,
                 num_responses
             )
             processing_time = time.time() - start_time

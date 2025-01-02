@@ -8,7 +8,7 @@ This module handles the complete document processing pipeline including:
 - Document chunking with various strategies
 """
 
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Tuple
 from langchain_core.documents import Document
 from sentence_transformers import SentenceTransformer
 from OCREnhancedPDFLoader import OCREnhancedPDFLoader
@@ -16,10 +16,7 @@ from TextPreprocessor import TextPreprocessor
 from ChunkingManager import ChunkingMethod, process_document
 
 class ChunkingInitializer:
-    """
-    Orchestrates document processing workflow including OCR, preprocessing, and chunking.
-    """
-    
+    """Orchestrates document processing workflow including OCR, preprocessing, and chunking."""
     def __init__(self, 
                  source_path: str,
                  chunking_method: ChunkingMethod = ChunkingMethod.PAGE,
@@ -28,10 +25,9 @@ class ChunkingInitializer:
                  chunk_overlap: int = 50,
                  similarity_threshold: float = 0.85,
                  model_name: Optional[str] = None,
-                 embedding_model: Optional[Any] = None):
-        """
-        Initialize chunking processor with configuration parameters.
-        """
+                 embedding_model: Optional[Any] = None,
+                 ):
+        """Initialize chunking processor with configuration parameters."""
         self.source_path = source_path
         self.chunking_method = chunking_method
         self.enable_preprocessing = enable_preprocessing
@@ -41,18 +37,16 @@ class ChunkingInitializer:
         self.model_name = model_name
         self.embedding_model = embedding_model or self._setup_default_embedding()
         
+
     def _setup_default_embedding(self) -> any:
-        """
-        Setup default embedding model based on chunking method.
-        """
+        """Setup default embedding model based on chunking method."""
         if self.chunking_method == ChunkingMethod.SEMANTIC:
             return SentenceTransformer("multi-qa-mpnet-base-dot-v1")
         return None
 
+
     def _load_documents(self) -> List[Document]:
-        """
-        Load documents with OCR enhancement.
-        """
+        """Load documents with OCR enhancement."""
         try:
             print("Loading documents with OCR enhancement...")
             loader = OCREnhancedPDFLoader(self.source_path)
@@ -63,10 +57,9 @@ class ChunkingInitializer:
             print(f"Error loading documents: {e}")
             raise
 
+
     def _preprocess_documents(self, documents: List[Document]) -> List[Document]:
-        """
-        Apply preprocessing to documents if enabled.
-        """
+        """Apply preprocessing to documents if enabled."""
         try:
             if self.enable_preprocessing:
                 print("Preprocessing documents...")
@@ -89,10 +82,9 @@ class ChunkingInitializer:
             print(f"Error in document preprocessing: {e}")
             raise
 
+
     def process(self) -> List[Document]:
-        """
-        Execute the complete document processing pipeline.
-        """
+        """Execute the complete document processing pipeline."""
         try:
             # Load and preprocess documents
             raw_documents = self._load_documents()
@@ -107,7 +99,7 @@ class ChunkingInitializer:
                 chunk_overlap=self.chunk_overlap,
                 similarity_threshold=self.similarity_threshold,
                 model_name=self.model_name,
-                embedding_model=self.embedding_model
+                embedding_model=self.embedding_model,
             )
             
             print(f"Processed {len(documents)} document chunks")
