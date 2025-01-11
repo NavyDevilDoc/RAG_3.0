@@ -1,5 +1,3 @@
-# ChainManager.py
-
 """
 ChainManager.py
 A module for managing LangChain question-answering chains with vector datastores.
@@ -14,33 +12,14 @@ from operator import itemgetter
 
 class ChainManager:
     def __init__(self, datastore, model, template):
-
-        """
-        Initialize the ChainManager with required components.
-
-        Args:
-            datastore (Any): Vector datastore for document retrieval
-            model (Any): Language model for text generation
-            template (str): Prompt template for structuring queries
-
-        Raises:
-            ValueError: If any required component is invalid
-        """
+        """Initialize the ChainManager with required components."""
         self.datastore = datastore
         self.model = model
         self.template = template
 
 
     def setup_chain(self):
-        """
-        Set up and return the question-answering chain.
-
-        Returns:
-            Any: Configured LangChain chain ready for question answering
-
-        Raises:
-            RuntimeError: If chain setup fails
-        """
+        """Set up and return the question-answering chain."""
         try:
             parser = StrOutputParser()
             prompt = PromptTemplate.from_template(self.template)

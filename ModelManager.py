@@ -14,29 +14,22 @@ from typing import List, Any, Dict
 import os
 import sys
 from dotenv import load_dotenv
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_openai.embeddings import OpenAIEmbeddings
 from SentenceTransformerEmbeddings import SentenceTransformerEmbeddings
 
 class ModelManager:
-    """
-    Manages language models and embeddings initialization and operations.
-    """
-
+    """Manages language models and embeddings initialization and operations."""
     def __init__(self, env_path: str, mode: str= 'rag'):
-        """
-        Initialize ModelManager with environment variables.
-        """
+        """Initialize ModelManager with environment variables."""
         self.mode = mode.lower()
         self.load_environment_variables(env_path)
         self.llm_type = None
 
     
     def load_environment_variables(self, env_path: str) -> None:
-        """
-        Load environment variables from .env file.
-        """
+        """Load environment variables from .env file."""
         print("Loading environment variables...")
         load_dotenv(env_path)
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -51,8 +44,6 @@ class ModelManager:
 
     def get_pinecone_api_key(self) -> str:
         """Retrieve Pinecone API key"""
-        
-        
         return self.pinecone_api_key
 
 
@@ -117,9 +108,7 @@ class ModelManager:
 
 
     def determine_embedding_dimensions(self, embeddings: Any) -> int:
-        """
-        Determine embedding dimensions using sample text.
-        """
+        """Determine embedding dimensions using sample text."""
         try:
             text = "This is a text document."
             embedding = embeddings.embed_documents([text])[0]
@@ -137,11 +126,9 @@ class ModelManager:
                 key.upper(): value.upper() 
                 for key, value in config.items()
             }
-            
             # Get model selections - now using strings directly 
             selected_llm = select_llm
             selected_embedding_model = select_embed
-            
             # Load models
             model = self.load_model(
                 normalized_config["SELECTED_LLM_TYPE"], 
@@ -152,10 +139,8 @@ class ModelManager:
                 normalized_config["SELECTED_EMBEDDING_SCHEME"], 
                 selected_embedding_model
             )
-            
             # Get dimensions
             dimensions = self.determine_embedding_dimensions(embeddings)
-            
             return model, embeddings, dimensions, selected_llm, selected_embedding_model
             
         except KeyError as e:

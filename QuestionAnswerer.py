@@ -3,19 +3,11 @@ import time
 import json
 from typing import Dict, List, Optional
 from ResponseSelector import ResponseSelector
-from TextPreprocessor import TextPreprocessor
+
 
 class QuestionAnswerer:
     def __init__(self, chain, scoring_metric, embeddings, ground_truth_path: Optional[str] = None):
-        """
-        Initialize the QuestionAnswerer.
-        
-        Args:
-            chain: The chain to use for question answering
-            scoring_metric: Metric to evaluate response quality
-            embeddings: Embedding model for text processing
-            ground_truth_path: Optional path to ground truth JSON file
-        """
+        """Initialize the QuestionAnswerer."""
         self.chain = chain
         self.scoring_metric = scoring_metric
         self.embeddings = embeddings
@@ -36,6 +28,7 @@ class QuestionAnswerer:
             print(f"Error loading ground truth: {e}")
             return {}
 
+
     def answer_questions(self, questions: List[str], datastore, use_ground_truth: bool = False, num_responses: int = 3):
         """Answer questions and return structured responses."""
         results = []
@@ -47,7 +40,7 @@ class QuestionAnswerer:
 
             # Retrieve relevant documents
             retrieved_results = datastore.similarity_search_with_score(query=question, k=10)
-            scored_documents = [(result[0].page_content, result[1]) for result in retrieved_results]
+            scored_documents = self.scoring_metric.compute_relevance_score(question, [result[0].page_content for result in retrieved_results])
             top_documents = [doc[0] for doc in scored_documents]
             references = [doc[0].metadata.get('source', '') for doc in retrieved_results[:3]]
 
@@ -77,8 +70,6 @@ class QuestionAnswerer:
                 'ground_truth_used': bool(expected_answer)
             })
 
-            processor = TextPreprocessor()
-            print(f"Best Response: {processor.format_text(best_response,100)}")
             print(f"Confidence Score: {confidence_score:.2f}")
             print(f"Quality Scores: {quality_scores}\n")
 
