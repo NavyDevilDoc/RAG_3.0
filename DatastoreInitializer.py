@@ -21,13 +21,11 @@ class DatastoreInitializer:
     """Manages datastore setup and configuration for vector storage."""
     def __init__(self, 
                  doc_name: str,
-                 datastore_name: str,
                  pinecone_api_key: str,
                  dimensions: int,
                  embedding_model: Any):
         """Initialize datastore manager with configuration."""
         self.doc_name = doc_name
-        self.datastore_name = self._validate_pinecone_name(datastore_name)
         self.pinecone_api_key = pinecone_api_key
         self.dimensions = dimensions
         self.embedding_model = embedding_model
@@ -62,7 +60,7 @@ class DatastoreInitializer:
 
     def _get_index_name(self) -> str:
         """Generate unique index name."""
-        return self.datastore_name
+        return self.doc_name
 
 
     def setup_datastore(self, 
@@ -111,12 +109,12 @@ class DatastoreInitializer:
             print(f"Active Index: {index_name}")
 
             # Create new index if needed
-            if storage_type == StorageType.NEW:
+            if storage_type == StorageType.PINECONE_NEW:
                 spec = ServerlessSpec(cloud='aws', region='us-east-1')
                 self.manager.setup_index(index_name, spec)
 
             # Initialize documents for existing index
-            documents = None if storage_type == StorageType.EXISTING else []
+            documents = None if storage_type == StorageType.PINECONE_EXISTING else []
 
             # Setup and return datastore
             return self.manager.setup_datastore(

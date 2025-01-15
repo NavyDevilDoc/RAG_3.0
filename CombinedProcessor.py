@@ -26,7 +26,6 @@ class CombinedProcessor:
                  enable_preprocessing: bool = False,
                  storage_type: StorageType = StorageType.PINECONE_NEW,
                  model_name: str = None,
-                 datastore_name: str = None
                  ):
         """Initialize document processor with configuration and RAG components."""
         self.doc_name = doc_name
@@ -38,7 +37,6 @@ class CombinedProcessor:
         self.enable_preprocessing = enable_preprocessing
         self.storage_type = storage_type
         self.model_name = model_name
-        self.datastore_name = datastore_name or doc_name
         
 
     def process_and_store(self, source_path: Union[str, List[str]]) -> None:
@@ -49,7 +47,6 @@ class CombinedProcessor:
             try:
                 datastore_manager = DatastoreInitializer(
                     doc_name=self.doc_name,
-                    datastore_name=self.datastore_name,
                     pinecone_api_key=self.model_manager.get_pinecone_api_key(),
                     dimensions=self.dimensions,
                     embedding_model=self.embedding_model
@@ -89,7 +86,6 @@ class CombinedProcessor:
         try:
             datastore_manager = DatastoreInitializer(
                 doc_name=self.doc_name,
-                datastore_name=self.datastore_name,
                 pinecone_api_key=self.model_manager.get_pinecone_api_key(),
                 dimensions=self.dimensions,
                 embedding_model=self.embedding_model

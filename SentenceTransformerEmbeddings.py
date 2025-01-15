@@ -16,6 +16,7 @@ class SentenceTransformerEmbeddings(Embeddings):
         if not texts:
             raise ValueError("Input 'texts' must contain at least one document.")
         
+        
         embeddings = self.model.encode(texts)
         return embeddings.tolist()
     
@@ -23,5 +24,11 @@ class SentenceTransformerEmbeddings(Embeddings):
         if not text:
             raise ValueError("Input 'text' must not be empty.")
         
-        embedding = self.model.encode([text])[0]
-        return embedding.tolist()
+        try:
+            print(f"Embedding query in SentenceTransformerEmbeddings: {text}")
+            embedding = self.model.encode([text])[0]
+            print("Query successfully embedded")
+            return embedding.tolist()
+        except Exception as e:
+            print(f"Error embedding query: {str(e)}")
+            raise

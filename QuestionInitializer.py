@@ -1,5 +1,5 @@
 # QuestionInitializer.py
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Any
 import time
 from ScoringMetric import ScoringMetric
 from ChainManager import ChainManager
@@ -56,6 +56,7 @@ class QuestionInitializer:
             
             # Initialize pipeline components
             self._initialize_pipeline(template)
+            print(f"Processing questions: {questions}")  # Debugging statement
             
             # Process questions and measure time
             start_time = time.time()

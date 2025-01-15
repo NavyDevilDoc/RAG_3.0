@@ -30,7 +30,6 @@ class Driver:
         llm_model: str = 'llama3.2:latest', 
         embedding_model: str = 'all-mpnet-base-v2', 
         doc_name: str = 'test-index',
-        datastore_name: str = None,
         chunking_method: str = 'HIERARCHICAL',
         storage_type: str = 'PINECONE_EXISTING',
         template_name: str = 'default',
@@ -74,7 +73,6 @@ class Driver:
             self.embedding_type = embedding_type
             self.embedding_index = embedding_model
             self.doc_name = doc_name
-            self.datastore_name = datastore_name or doc_name
             self.chunking_method = chunking_method
             self.storage_type = storage_type
             self.template_name = template_name
@@ -88,10 +86,6 @@ class Driver:
             self.selected_embedding_model = None
             self.model_manager = None
             self.datastore = None
-        
-        
-        # Initial setup for RAG mode
-        #self.setup()
 
 
     def set_doc_input(self, doc_input: List[str]):
@@ -196,7 +190,6 @@ class Driver:
             chunking_method=self._convert_chunking_method(self.chunking_method),
             storage_type=self._convert_storage_type(self.storage_type),
             model_name=self.selected_llm,
-            datastore_name=self.datastore_name
         )
         
         self.datastore = processor.process_and_store(self.doc_input)
@@ -209,6 +202,8 @@ class Driver:
         
         if not questions:
             raise ValueError("Questions list cannot be empty")
+        
+        print(f"Processing questions: {questions}")  # Debugging statement
                 
         processor = QuestionInitializer(
             datastore=self.datastore,

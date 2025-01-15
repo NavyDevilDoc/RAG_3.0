@@ -31,8 +31,8 @@ class ResponseSelector:
         
         if not question or not response:
             return 0.0
-        q_embedding = self.embedding_model.encode(question, convert_to_tensor=True)
-        r_embedding = self.embedding_model.encode(response, convert_to_tensor=True)
+        q_embedding = self.embedding_model.encode(question)
+        r_embedding = self.embedding_model.encode(response)
         return float(util.pytorch_cos_sim(q_embedding, r_embedding))
 
 

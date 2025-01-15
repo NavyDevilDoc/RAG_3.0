@@ -38,39 +38,51 @@ class QuestionAnswerer:
         for question in questions:
             print(f"Processing Question: {question}\n")
 
-            # Retrieve relevant documents
-            retrieved_results = datastore.similarity_search_with_score(query=question, k=10)
-            scored_documents = self.scoring_metric.compute_relevance_score(question, [result[0].page_content for result in retrieved_results])
-            top_documents = [doc[0] for doc in scored_documents]
-            references = [doc[0].metadata.get('source', '') for doc in retrieved_results[:3]]
+            try: 
+                print(f"Attempting to embed question: {question}")
 
-            # Generate responses
-            responses = [self.chain.invoke({"question": question, "context": top_documents}) 
-                        for _ in range(num_responses)]
+                # Retrieve relevant documents
+                try: 
+                    retrieved_results = datastore.similarity_search_with_score(query=question, k=10)
+                    print(f"Successfully retrieved {len(retrieved_results)} documents")
+                except Exception as e:
+                    print(f"Error in similarity search: {str(e)}")
+                    continue
+                scored_documents = self.scoring_metric.compute_relevance_score(question, [result[0].page_content for result in retrieved_results])
+                top_documents = [doc[0] for doc in scored_documents]
+                references = [doc[0].metadata.get('source', '') for doc in retrieved_results[:3]]
 
-            # Select best response and get confidence
-            best_response = selector.select_best_response(question, responses)
-            ranked_responses = selector.rank_responses(question, responses)
-            confidence_score = ranked_responses[0][1]
+                # Generate responses
+                responses = [self.chain.invoke({"question": question, "context": top_documents}) 
+                            for _ in range(num_responses)]
 
-            # Calculate quality scores using ground truth if available
-            expected_answer = self.ground_truth.get(question) if use_ground_truth else None
-            quality_scores = self.scoring_metric.compute_response_quality_score(
-                best_response, 
-                expected_answer
-            )
+                # Select best response and get confidence
+                best_response = selector.select_best_response(question, responses)
+                ranked_responses = selector.rank_responses(question, responses)
+                confidence_score = ranked_responses[0][1]
 
-            results.append({
-                'question': question,
-                'answer': best_response,
-                'confidence': confidence_score,
-                'references': references,
-                'quality_scores': quality_scores,
-                'processing_time': time.time() - start_time,
-                'ground_truth_used': bool(expected_answer)
-            })
+                # Calculate quality scores using ground truth if available
+                expected_answer = self.ground_truth.get(question) if use_ground_truth else None
+                quality_scores = self.scoring_metric.compute_response_quality_score(
+                    best_response, 
+                    expected_answer
+                )
 
-            print(f"Confidence Score: {confidence_score:.2f}")
-            print(f"Quality Scores: {quality_scores}\n")
+                results.append({
+                    'question': question,
+                    'answer': best_response,
+                    'confidence': confidence_score,
+                    'references': references,
+                    'quality_scores': quality_scores,
+                    'processing_time': time.time() - start_time,
+                    'ground_truth_used': bool(expected_answer)
+                })
+
+                print(f"Confidence Score: {confidence_score:.2f}")
+                print(f"Quality Scores: {quality_scores}\n")
+
+            except Exception as e:
+                print(f"Error processing question '{question}': {str(e)}")
+                continue
 
         return results

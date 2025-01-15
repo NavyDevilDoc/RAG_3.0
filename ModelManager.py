@@ -14,7 +14,7 @@ from typing import List, Any, Dict
 import os
 import sys
 from dotenv import load_dotenv
-from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_ollama import ChatOllama
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_openai.embeddings import OpenAIEmbeddings
 from SentenceTransformerEmbeddings import SentenceTransformerEmbeddings
