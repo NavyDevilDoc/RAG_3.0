@@ -1,6 +1,6 @@
 # main.py
 import os
-from Setup import load_environment_variables, get_document_input, handle_rag_mode, handle_llm_mode
+from Setup import load_environment_variables, handle_rag_mode, handle_llm_mode
 from Driver import Driver
 import warnings
 
@@ -28,23 +28,22 @@ Available Ollama LLMs:
 # Initialize driver with all required parameters
 driver = Driver(
     # Mode Selection
-    mode='llm',
+    mode='rag',
     env_path=os.getenv("ENV_PATH"), 
     json_path=os.getenv("JSON_PATH"),
     # Language and Embedding Model Selection
-    llm_type='ollama',
-    embedding_type='sentence_transformer',
-    llm_model='granite3.1-dense:8b',
-    embedding_model='ibm-granite/granite-embedding-125m-english',
+    llm_type='gpt',
+    embedding_type='gpt',
+    llm_model='gpt-4o',
+    embedding_model='text-embedding-3-small',
     # RAG-specific Parameters
-    datastore_name='edqp-datastore-granite-30m',
     debug_mode=False, 
     doc_name='test-index', 
     chunking_method='PAGE', 
     storage_type='LOCAL_STORAGE',
     template_name='assistant', 
     use_ground_truth=False,
-    process_questions=False,
+    process_questions=True,
 )
 
 # Handle modes

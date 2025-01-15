@@ -8,6 +8,8 @@ from QuestionInitializer import QuestionInitializer
 from TextPreprocessor import TextPreprocessor
 from ResponseFormatter import QAResponse
 from LLMQueryManager import LLMQueryManager, LLMType
+from sentence_transformers import SentenceTransformer
+from langchain_openai.embeddings import OpenAIEmbeddings
 from typing import List
 from tqdm import tqdm
 import time
@@ -50,7 +52,8 @@ class Driver:
         self.llm_model = llm_model
         self.embedding_model = embedding_model
         self.debug_mode = debug_mode
-        
+
+
         # Initialize LLM query manager for direct queries
         if self.mode == 'llm':
             if self.llm_type.lower() == 'ollama':
@@ -86,6 +89,7 @@ class Driver:
             self.selected_embedding_model = None
             self.model_manager = None
             self.datastore = None
+            #self.embedding_type = None
 
 
     def set_doc_input(self, doc_input: List[str]):
@@ -208,7 +212,8 @@ class Driver:
         processor = QuestionInitializer(
             datastore=self.datastore,
             model=self.model,
-            embedding_model=self.selected_embedding_model
+            embedding_model=self.selected_embedding_model,
+            embedding_type=self.embedding_type,
         )
         
         try:

@@ -112,6 +112,7 @@ class ModelManager:
         try:
             text = "This is a text document."
             embedding = embeddings.embed_documents([text])[0]
+            print(f"Embedding dimensions: {len(embedding)}")
             return len(embedding)
         except Exception as e:
             print(f"Error determining embedding dimensions: {e}")

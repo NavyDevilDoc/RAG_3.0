@@ -13,6 +13,7 @@ class QuestionInitializer:
                  datastore: Any,
                  model: Any,
                  embedding_model: Any,
+                 embedding_type: Any,
                  template_path: str = "templates.json",
                  ground_truth_path: str = "ground_truth.json"
                  ):
@@ -20,12 +21,13 @@ class QuestionInitializer:
         self.datastore = datastore
         self.model = model
         self.embedding_model = embedding_model
+        self.embedding_type = embedding_type
         self.template_path = template_path
         self.ground_truth_path = ground_truth_path
         
         # Initialize components
         self.template_manager = TemplateManager(template_path)
-        self.scoring_metric = ScoringMetric(embedding_model)
+        self.scoring_metric = ScoringMetric(embedding_model, embedding_type)
         self.chain_manager = None
         self.question_answerer = None
 
