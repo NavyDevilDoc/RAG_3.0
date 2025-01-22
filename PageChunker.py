@@ -80,7 +80,7 @@ class PageChunker:
                 # Use tiktoken if the model is supported
                 self.tokenizer = tiktoken.encoding_for_model(model_name)
                 self.uses_tiktoken = True
-            elif "mistral" in model_name or "llama" in model_name:
+            elif "mistral" in model_name or "llama" in model_name or "granite" in model_name:
                 # Handle Ollama models with a basic tokenizer
                 self.uses_basic_tokenizer = True
             else:
