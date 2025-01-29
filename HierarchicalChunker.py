@@ -90,7 +90,7 @@ class HierarchicalChunker(PageChunker):
         self.page_stats.append(f"Created {len(chunks)} chunks for page {page_num}")
         return chunks
 
-    def process_document(self, file_path: str, preprocess: bool = False) -> Dict[str, List[Document]]:
+    def process_document(self, file_path: str, preprocess: bool = True) -> Dict[str, List[Document]]:
         """Process document with enhanced stats tracking."""
         self.page_stats = []  # Reset stats
         page_docs = super().process_document(file_path, preprocess)

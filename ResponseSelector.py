@@ -67,7 +67,8 @@ class ResponseSelector:
         normalized_scores = self._normalize_scores(scores)
         scored_responses = [(response, score) for (response, _), score in zip(scored_responses, normalized_scores)]
 
-        # Re-rank documents if enabled
+        '''
+        # Re-rank documents
         if self.use_reranking:
             original_responses = [response for response, _ in scored_responses]
             reranked_responses = self.rerank_documents(question, original_responses)
@@ -79,7 +80,7 @@ class ResponseSelector:
             print("-----Similarity scores after re-ranking and normalizing-----")
             for response, score in scored_responses:
                 print(f"Response: {response[:30]}... Score: {score}")
-
+        '''
         # Sort and return only the top n responses
         try:
             return sorted(scored_responses, key=lambda x: x[1], reverse=True)[:self.top_results]
@@ -88,7 +89,7 @@ class ResponseSelector:
             return []
 
 
-    def rerank_documents(self, query: str, documents: List[str]) -> List[str]:
+    def rerank_documents(self, query: str, documents: List[str]) -> List[Tuple[str, float]]:
         """Re-rank documents using BERT-based similarity."""
         query_embedding = self._encode_text(query)
         doc_embeddings = [self._encode_text(doc) for doc in documents]
@@ -100,7 +101,7 @@ class ResponseSelector:
             print(f"Document: {doc[:30]}... Score: {score}")
 
         ranked_docs_with_scores = sorted(zip(similarities, documents), key=lambda x: x[0], reverse=True)
-        ranked_docs = [doc for _, doc in ranked_docs_with_scores]
+        ranked_docs = [(doc, score) for score, doc in ranked_docs_with_scores]
 
         '''
         # Print ranked documents with scores for debugging

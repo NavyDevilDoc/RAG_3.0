@@ -43,17 +43,38 @@ class QuestionAnswerer:
         for question in questions:
             try:
                 # Retrieve relevant documents
-                retrieved_results = datastore.similarity_search_with_score(query=question, k=10)
+                retrieved_results = datastore.similarity_search_with_score(query=question, k=20)
                 print(f"-----Retrieved Results-----")
                 for result in retrieved_results:
                     print(f"Document: {result[0].page_content[:100]}... Score: {result[1]}")
 
+                # Score documents
                 scored_documents = scoring_metric.compute_relevance_score(question, [result[0].page_content for result in retrieved_results])
-                top_documents = [doc[0] for doc in scored_documents]
-                print(f"-----Top Documents-----")
+                scored_documents = sorted(scored_documents, key=lambda x: x[1], reverse=True)
+                print(f"-----Scored Documents-----")
+                for doc, score in scored_documents:
+                    print(f"Document: {doc[:100]}... Score: {score}")
+
+                # Select top 50% of scored documents for re-ranking
+                top_50_percent_index = len(scored_documents) // 2
+                documents_for_reranking = [doc for doc, _ in scored_documents[:top_50_percent_index]]
+                print(f"-----Documents for Re-ranking-----")
+                for doc in documents_for_reranking:
+                    print(f"Document: {doc[:100]}...")
+
+                # Re-rank documents
+                reranked_documents = selector.rerank_documents(question, documents_for_reranking)
+                print(f"-----Re-ranked Documents-----")
+                for doc, score in reranked_documents:
+                    print(f"Document: {doc[:100]}... Score: {score}")
+
+                # Use top 5 re-ranked documents to generate responses
+                top_documents = [doc for doc, _ in reranked_documents[:5]]
+                print(f"-----Top Documents for Response Generation-----")
                 for doc in top_documents:
                     print(f"Document: {doc[:100]}...")
-                references = [doc[0].metadata.get('source', '') for doc in retrieved_results[:3]]
+
+                references = [result[0].metadata.get('source', '') for result in retrieved_results[:3]]
 
                 # Generate responses
                 responses = [self.chain.invoke({"question": question, "context": top_documents}) for _ in range(num_responses)]
