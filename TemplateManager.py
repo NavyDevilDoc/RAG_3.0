@@ -22,13 +22,13 @@ class TemplateManager:
             try:
                 with open(self.template_path, "r") as file:
                     templates = json.load(file)
-                print(f"Templates loaded from {self.template_path}")
+                #print(f"Templates loaded from {self.template_path}")
                 return templates
             except Exception as e:
                 print(f"Error loading templates: {e}")
                 return {"default": self._default_template()}
         else:
-            print("Using default template.")
+            #print("Using default template.")
             return {"default": self._default_template()}
 
 

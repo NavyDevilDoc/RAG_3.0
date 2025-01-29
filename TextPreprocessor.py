@@ -41,17 +41,7 @@ class TextPreprocessor:
         return [self.lemmatizer.lemmatize(word) for word in words]
 
     def preprocess(self, text):
-        """Clean and preprocess text for NLP tasks.
-        
-        Args:
-            text (str): Raw input text to be cleaned and preprocessed.
-            
-        Returns:
-            str: Processed text with standardized formatting, no stopwords, and lemmatized words.
-            
-        Raises:
-            Exception: If an error occurs during preprocessing.
-        """
+        """Clean and preprocess text for NLP tasks."""
         try:
             # Apply preprocessing steps
             text = self.standardize_case(text)
@@ -60,8 +50,8 @@ class TextPreprocessor:
             
             # Tokenize and process words
             words = text.split()
-            words = self.remove_stopwords(words)
-            words = self.lemmatize_words(words)
+            #words = self.remove_stopwords(words)
+            #words = self.lemmatize_words(words)
             
             return ' '.join(words)
         except Exception as e:

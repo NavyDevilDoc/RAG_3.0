@@ -22,7 +22,7 @@ class ScoringMetric:
 
     def compute_relevance_score(self, query: str, retrieved_documents: List[str]) -> List[Tuple[str, float]]:
         """Compute relevance scores for retrieved documents."""
-        scored_documents = []  # Initialize scored_documents to an empty list
+        scored_documents = []  # Initialize scored_documents to an empty list; without this, the exception will trigger because the variable is not defined
         try:
             print(f"Computing relevance for query: --{query}-- using --{self.embedding_type}-- model")
             if self.embedding_type == 'sentence_transformer':
@@ -37,8 +37,7 @@ class ScoringMetric:
                 query_embedding = self.embedding_model.embed_query(query)
                 scored_documents = [
                     (doc, float(util.pytorch_cos_sim(query_embedding, self.embedding_model.embed_documents(doc))))
-                    for doc in retrieved_documents
-                ]
+                    for doc in retrieved_documents]
             return sorted(scored_documents, key=lambda x: x[1], reverse=True)
         except Exception as e:
             print(f"Error in relevance scoring: {str(e)}")

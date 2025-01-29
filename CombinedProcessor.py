@@ -23,7 +23,7 @@ class CombinedProcessor:
                  embeddings: Any,
                  dimensions: int,
                  chunking_method: ChunkingMethod = ChunkingMethod.SEMANTIC,
-                 enable_preprocessing: bool = False,
+                 enable_preprocessing: bool = True,
                  storage_type: StorageType = StorageType.PINECONE_NEW,
                  model_name: str = None,
                  ):

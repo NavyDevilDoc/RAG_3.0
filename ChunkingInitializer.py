@@ -20,7 +20,7 @@ class ChunkingInitializer:
     def __init__(self, 
                  source_path: str,
                  chunking_method: ChunkingMethod = ChunkingMethod.PAGE,
-                 enable_preprocessing: bool = False,
+                 enable_preprocessing: bool = True,
                  chunk_size: int = 500,
                  chunk_overlap: int = 50,
                  similarity_threshold: float = 0.85,

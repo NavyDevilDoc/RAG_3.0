@@ -1,7 +1,7 @@
 # QuestionInitializer.py
 from typing import List, Dict, Any
 import time
-from ScoringMetric import ScoringMetric
+import os
 from ChainManager import ChainManager
 from QuestionAnswerer import QuestionAnswerer
 from TemplateManager import TemplateManager
@@ -15,7 +15,10 @@ class QuestionInitializer:
                  embedding_model: Any,
                  embedding_type: Any,
                  template_path: str = "templates.json",
-                 ground_truth_path: str = "ground_truth.json"
+                 ground_truth_path: str = "ground_truth.json",
+                 use_reranking: bool = True,
+                 save_outputs: bool = True,
+                 output_file_path: str = "re-ranking_test_outputs.txt"
                  ):
         """Initialize question processor with models and paths."""
         self.datastore = datastore
@@ -24,41 +27,46 @@ class QuestionInitializer:
         self.embedding_type = embedding_type
         self.template_path = template_path
         self.ground_truth_path = ground_truth_path
-        
+        self.use_reranking = use_reranking
+        self.save_outputs = save_outputs
+        self.output_file_path = output_file_path
+
         # Initialize components
         self.template_manager = TemplateManager(template_path)
-        self.scoring_metric = ScoringMetric(embedding_model, embedding_type)
         self.chain_manager = None
         self.question_answerer = None
+
 
     def _initialize_pipeline(self, template: str):
         """Initialize chain manager and question answerer components."""
         self.chain_manager = ChainManager(self.datastore, self.model, template)
         chain = self.chain_manager.setup_chain()
         self.question_answerer = QuestionAnswerer(chain, 
-                                                self.scoring_metric,
                                                 self.embedding_model,
-                                                self.ground_truth_path)
+                                                self.embedding_type,
+                                                self.ground_truth_path,
+                                                use_reranking=self.use_reranking,
+                                                save_outputs=self.save_outputs,
+                                                output_file_path=self.output_file_path)
 
     def _load_template(self, template_name: str = "default") -> str:
         """Load specific template."""
         template = self.template_manager.get_template(template_name)
-        print(f"Loaded template: {template}")
+        #print(f"Loaded template: {template}")
         return template
 
     def process_questions(self,
                         questions: List[str],
                         use_ground_truth: bool = False,
                         template_name: str = "default",
-                        num_responses: int = 3) -> List[Dict]:
+                        num_responses: int = 5) -> List[Dict]:
         """Process questions and return execution time."""
         try:
             # Load template
             template = self._load_template(template_name)
             
-            # Initialize pipeline components
+            # Initialize pipeline componentsS
             self._initialize_pipeline(template)
-            print(f"Processing questions: {questions}")  # Debugging statement
             
             # Process questions and measure time
             start_time = time.time()
