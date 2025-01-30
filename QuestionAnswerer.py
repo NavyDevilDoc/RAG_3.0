@@ -48,16 +48,19 @@ class QuestionAnswerer:
                 for result in retrieved_results:
                     print(f"Document: {result[0].page_content[:100]}... Score: {result[1]}")
 
+                '''
                 # Score documents
                 scored_documents = scoring_metric.compute_relevance_score(question, [result[0].page_content for result in retrieved_results])
+                print(f"Scored Documents Output: {scored_documents}")
                 scored_documents = sorted(scored_documents, key=lambda x: x[1], reverse=True)
                 print(f"-----Scored Documents-----")
                 for doc, score in scored_documents:
                     print(f"Document: {doc[:100]}... Score: {score}")
+                '''
 
                 # Select top 50% of scored documents for re-ranking
-                top_50_percent_index = len(scored_documents) // 2
-                documents_for_reranking = [doc for doc, _ in scored_documents[:top_50_percent_index]]
+                top_50_percent_index = len(retrieved_results) // 2
+                documents_for_reranking = [result[0].page_content for result in retrieved_results[:top_50_percent_index]]
                 print(f"-----Documents for Re-ranking-----")
                 for doc in documents_for_reranking:
                     print(f"Document: {doc[:100]}...")

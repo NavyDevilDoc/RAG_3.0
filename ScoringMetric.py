@@ -39,6 +39,7 @@ class ScoringMetric:
                     (doc, float(util.pytorch_cos_sim(query_embedding, self.embedding_model.embed_documents(doc))))
                     for doc in retrieved_documents]
             return sorted(scored_documents, key=lambda x: x[1], reverse=True)
+
         except Exception as e:
             print(f"Error in relevance scoring: {str(e)}")
             return scored_documents  # Return the empty list in case of an error

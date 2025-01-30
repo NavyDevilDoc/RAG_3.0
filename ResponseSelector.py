@@ -2,6 +2,7 @@ from ScoringMetric import ScoringMetric
 from transformers import BertTokenizer, BertModel
 import torch
 import pandas as pd
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer, util
 from typing import List, Tuple
 
@@ -89,10 +90,22 @@ class ResponseSelector:
             return []
 
 
+    def _split_into_chunks(self, text: str, max_length: int) -> List[str]:
+        """Split text into chunks of max_length tokens using RecursiveCharacterTextSplitter."""
+        splitter = RecursiveCharacterTextSplitter(chunk_size=max_length, chunk_overlap=0)
+        chunks = splitter.split_text(text)
+        return chunks
+
+
     def rerank_documents(self, query: str, documents: List[str]) -> List[Tuple[str, float]]:
         """Re-rank documents using BERT-based similarity."""
         query_embedding = self._encode_text(query)
-        doc_embeddings = [self._encode_text(doc) for doc in documents]
+        doc_embeddings = []
+        for doc in documents:
+            chunks = self._split_into_chunks(doc, max_length=512)
+            chunk_embeddings = [self._encode_text(chunk) for chunk in chunks]
+            doc_embedding = torch.mean(torch.stack(chunk_embeddings), dim=0)
+            doc_embeddings.append(doc_embedding)
         similarities = [self._cosine_similarity(query_embedding, doc_embedding) for doc_embedding in doc_embeddings]
 
         # Print similarity scores for debugging
@@ -102,13 +115,6 @@ class ResponseSelector:
 
         ranked_docs_with_scores = sorted(zip(similarities, documents), key=lambda x: x[0], reverse=True)
         ranked_docs = [(doc, score) for score, doc in ranked_docs_with_scores]
-
-        '''
-        # Print ranked documents with scores for debugging
-        print("Documents after re-ranking:")
-        for score, doc in ranked_docs_with_scores:
-            print(f"Document: {doc[:30]}... Score: {score}")
-        '''
 
         return ranked_docs
 
