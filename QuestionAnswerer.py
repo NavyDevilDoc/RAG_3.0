@@ -8,7 +8,16 @@ import os
 
 
 class QuestionAnswerer:
-    def __init__(self, chain, embedding_model, embedding_type, ground_truth_path: Optional[str] = None, use_reranking: bool = True, save_outputs: bool = False, output_file_path: str = "re-ranking_test_outputs.txt"):
+    def __init__(self, 
+                 chain, 
+                 embedding_model, 
+                 embedding_type, 
+                 ground_truth_path: Optional[str] = None, 
+                 use_reranking: bool = True, 
+                 save_outputs: bool = False, 
+                 output_file_path: str = "re-ranking_test_outputs.txt",
+                 num_responses: int = 5
+                 ):
         """Initialize the QuestionAnswerer."""
         self.chain = chain
         self.embedding_model = embedding_model
@@ -17,7 +26,9 @@ class QuestionAnswerer:
         self.use_reranking = use_reranking
         self.save_outputs = save_outputs
         self.output_file_path = output_file_path
+        self.num_responses = num_responses
         self.ground_truth = self._load_ground_truth()
+
 
     def _load_ground_truth(self) -> Dict[str, str]:
         """Load ground truth data from JSON file."""
@@ -33,8 +44,9 @@ class QuestionAnswerer:
             return {}
 
 
-    def answer_questions(self, questions: List[str], datastore, use_ground_truth: bool = False, num_responses: int = 1):
+    def answer_questions(self, questions: List[str], datastore, use_ground_truth: bool = False):
         """Answer questions and return structured responses."""
+        """ Experimenting with k, top percentage, and re-ranked documents going to the response selector """
         results = []
         start_time = time.time()
         selector = ResponseSelector(use_reranking=self.use_reranking, save_outputs=self.save_outputs, output_file_path=self.output_file_path)
@@ -44,43 +56,33 @@ class QuestionAnswerer:
             try:
                 # Retrieve relevant documents
                 retrieved_results = datastore.similarity_search_with_score(query=question, k=20)
-                print(f"-----Retrieved Results-----")
+                print(f"\n-----Retrieved Results-----")
                 for result in retrieved_results:
-                    print(f"Document: {result[0].page_content[:100]}... Score: {result[1]}")
+                    page_number = result[0].metadata.get('page', 'Unknown')
+                    print(f"Document #{page_number}: {result[0].page_content[:100]}... Score: {result[1]}")
 
-                '''
-                # Score documents
-                scored_documents = scoring_metric.compute_relevance_score(question, [result[0].page_content for result in retrieved_results])
-                print(f"Scored Documents Output: {scored_documents}")
-                scored_documents = sorted(scored_documents, key=lambda x: x[1], reverse=True)
-                print(f"-----Scored Documents-----")
-                for doc, score in scored_documents:
-                    print(f"Document: {doc[:100]}... Score: {score}")
-                '''
 
                 # Select top 50% of scored documents for re-ranking
-                top_50_percent_index = len(retrieved_results) // 2
-                documents_for_reranking = [result[0].page_content for result in retrieved_results[:top_50_percent_index]]
-                print(f"-----Documents for Re-ranking-----")
-                for doc in documents_for_reranking:
-                    print(f"Document: {doc[:100]}...")
+                top_percentage = 0.25
+                top_percentage_index = int(len(retrieved_results) * top_percentage)
+                documents_for_reranking = [result[0].page_content for result in retrieved_results[:top_percentage_index]]
 
                 # Re-rank documents
                 reranked_documents = selector.rerank_documents(question, documents_for_reranking)
-                print(f"-----Re-ranked Documents-----")
+                print(f"\n-----Re-ranked Documents-----")
                 for doc, score in reranked_documents:
                     print(f"Document: {doc[:100]}... Score: {score}")
 
-                # Use top 5 re-ranked documents to generate responses
-                top_documents = [doc for doc, _ in reranked_documents[:5]]
-                print(f"-----Top Documents for Response Generation-----")
+                # Use top 3 re-ranked documents to generate responses
+                top_documents = [doc for doc, _ in reranked_documents[:3]]
+                print(f"\n-----Top Documents for Response Generation-----")
                 for doc in top_documents:
                     print(f"Document: {doc[:100]}...")
 
                 references = [result[0].metadata.get('source', '') for result in retrieved_results[:3]]
 
                 # Generate responses
-                responses = [self.chain.invoke({"question": question, "context": top_documents}) for _ in range(num_responses)]
+                responses = [self.chain.invoke({"question": question, "context": top_documents}) for _ in range(self.num_responses)]
 
                 # Select best response and get confidence
                 ranked_responses = selector.rank_responses(question, responses)
@@ -101,17 +103,16 @@ class QuestionAnswerer:
                     'ground_truth_used': bool(expected_answer)
                 })
 
-                print(f"\nConfidence Score: {confidence_score:.2f}")
-                print(f"Quality Scores: {quality_scores}\n")
+                print(f"\nQuality Scores: {quality_scores}\n")
 
                 # Save results to DataFrame
                 if self.save_outputs:
                     original_results = [(result[0].page_content, result[1]) for result in retrieved_results]
-                    re_ranked_results = [(response, score) for response, score in ranked_responses]
-                    df = selector.save_results_to_dataframe(original_results, re_ranked_results)
+                    re_ranked_results = [(doc, score) for doc, score in reranked_documents]
+                    response_results = [(response, score) for response, score in ranked_responses]
+                    df = selector.save_results_to_dataframe(original_results, re_ranked_results, response_results)
                     filename = "dataframe_output.csv"
                     df.to_csv(filename, index=False)
-                    #print(df)
 
             except Exception as e:
                 print(f"Error processing question '{question}': {str(e)}")

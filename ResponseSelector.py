@@ -65,23 +65,9 @@ class ResponseSelector:
 
         # Normalize scores before re-ranking
         scores = [score for _, score in scored_responses]
-        normalized_scores = self._normalize_scores(scores)
-        scored_responses = [(response, score) for (response, _), score in zip(scored_responses, normalized_scores)]
+        #normalized_scores = self._normalize_scores(scores)
+        scored_responses = [(response, score) for (response, _), score in zip(scored_responses, scores)]
 
-        '''
-        # Re-rank documents
-        if self.use_reranking:
-            original_responses = [response for response, _ in scored_responses]
-            reranked_responses = self.rerank_documents(question, original_responses)
-            if self.save_outputs:
-                self.save_outputs_to_file(original_responses, reranked_responses)
-            scored_responses = [(response, score) for response, score in scored_responses if response in reranked_responses]
-
-            # Print re-ranked scores for debugging
-            print("-----Similarity scores after re-ranking and normalizing-----")
-            for response, score in scored_responses:
-                print(f"Response: {response[:30]}... Score: {score}")
-        '''
         # Sort and return only the top n responses
         try:
             return sorted(scored_responses, key=lambda x: x[1], reverse=True)[:self.top_results]
@@ -107,15 +93,8 @@ class ResponseSelector:
             doc_embedding = torch.mean(torch.stack(chunk_embeddings), dim=0)
             doc_embeddings.append(doc_embedding)
         similarities = [self._cosine_similarity(query_embedding, doc_embedding) for doc_embedding in doc_embeddings]
-
-        # Print similarity scores for debugging
-        print("-----Similarity scores before re-ranking-----")
-        for doc, score in zip(documents, similarities):
-            print(f"Document: {doc[:30]}... Score: {score}")
-
         ranked_docs_with_scores = sorted(zip(similarities, documents), key=lambda x: x[0], reverse=True)
         ranked_docs = [(doc, score) for score, doc in ranked_docs_with_scores]
-
         return ranked_docs
 
 
@@ -151,28 +130,27 @@ class ResponseSelector:
             return "No suitable response found."
         
 
-    def save_results_to_dataframe(self, original_results, re_ranked_results):
-        """Save original and re-ranked results to a DataFrame and save to a CSV file."""
+    def save_results_to_dataframe(self, original_results, re_ranked_results, responses):
+        """Save original, re-ranked results, and responses to a DataFrame and save to a CSV file."""
         original_results_len = len(original_results)
         re_ranked_results_len = len(re_ranked_results)
+        responses_len = len(responses)
 
-        if original_results_len != re_ranked_results_len:
-            print("Warning: The lengths of the original and re-ranked results are not the same.")
-        
+        max_len = max(original_results_len, re_ranked_results_len, responses_len)
+
+        # Extend lists to the maximum length by filling with None
+        original_results.extend([("", None)] * (max_len - original_results_len))
+        re_ranked_results.extend([("", None)] * (max_len - re_ranked_results_len))
+        responses.extend([("", None)] * (max_len - responses_len))
+
         data = {
             "Original Result": [result[0] for result in original_results],
-            "Rank": list(range(1, original_results_len + 1)),
-            "Score": [result[1] for result in original_results],
+            "Original Score": [result[1] for result in original_results],
             "Re-ranked Result": [result[0] for result in re_ranked_results],
-            "New Rank": list(range(1, re_ranked_results_len + 1)),
-            "New Score": [result[1] for result in re_ranked_results]
+            "Re-ranked Score": [result[1] for result in re_ranked_results],
+            "Response": [response[0] for response in responses],
+            "Response Score": [response[1] for response in responses]
         }
-        
-        # Ensure all lists have the same length
-        min_len = min(original_results_len, re_ranked_results_len)
-        for key in data:
-            data[key] = data[key][:min_len]
-        
+
         df = pd.DataFrame(data)
-        
         return df

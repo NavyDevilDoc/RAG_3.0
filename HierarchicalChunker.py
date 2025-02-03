@@ -30,7 +30,7 @@ class HierarchicalChunker(PageChunker):
         """Analyze chunk content using parent class methods."""
         return self._analyze_page(content)  # Reuse parent analysis
 
-    def _create_semantic_chunks(self, content: str, page_num: int) -> List[Document]:
+    def _create_semantic_chunks(self, content: str, page_number: int) -> List[Document]:
         """Create semantic chunks with detailed metadata."""
         if not content.strip():
             return []
@@ -52,9 +52,9 @@ class HierarchicalChunker(PageChunker):
                         page_content=chunk_text,
                         metadata={
                             "level": "chunk",
-                            "page_num": page_num,
+                            "page_num": page_number,
                             "chunk_num": len(chunks),
-                            "parent_page": page_num,
+                            "parent_page": page_number,
                             "char_count": stats["char_count"],
                             "token_count": stats["token_count"],
                             "sentence_count": stats["sentence_count"],
@@ -76,9 +76,9 @@ class HierarchicalChunker(PageChunker):
                 page_content=chunk_text,
                 metadata={
                     "level": "chunk",
-                    "page_num": page_num,
+                    "page_num": page_number,
                     "chunk_num": len(chunks),
-                    "parent_page": page_num,
+                    "parent_page": page_number,
                     "char_count": stats["char_count"],
                     "token_count": stats["token_count"],
                     "sentence_count": stats["sentence_count"],
@@ -87,7 +87,7 @@ class HierarchicalChunker(PageChunker):
                 }
             ))
 
-        self.page_stats.append(f"Created {len(chunks)} chunks for page {page_num}")
+        self.page_stats.append(f"Created {len(chunks)} chunks for page {page_number}")
         return chunks
 
     def process_document(self, file_path: str, preprocess: bool = True) -> Dict[str, List[Document]]:

@@ -18,7 +18,8 @@ class QuestionInitializer:
                  ground_truth_path: str = "ground_truth.json",
                  use_reranking: bool = True,
                  save_outputs: bool = True,
-                 output_file_path: str = "re-ranking_test_outputs.txt"
+                 output_file_path: str = "re-ranking_test_outputs.txt",
+                 num_responses: int = 1
                  ):
         """Initialize question processor with models and paths."""
         self.datastore = datastore
@@ -30,6 +31,7 @@ class QuestionInitializer:
         self.use_reranking = use_reranking
         self.save_outputs = save_outputs
         self.output_file_path = output_file_path
+        self.num_responses = num_responses
 
         # Initialize components
         self.template_manager = TemplateManager(template_path)
@@ -47,7 +49,8 @@ class QuestionInitializer:
                                                 self.ground_truth_path,
                                                 use_reranking=self.use_reranking,
                                                 save_outputs=self.save_outputs,
-                                                output_file_path=self.output_file_path)
+                                                output_file_path=self.output_file_path,
+                                                num_responses=self.num_responses)
 
     def _load_template(self, template_name: str = "default") -> str:
         """Load specific template."""
@@ -58,8 +61,7 @@ class QuestionInitializer:
     def process_questions(self,
                         questions: List[str],
                         use_ground_truth: bool = False,
-                        template_name: str = "default",
-                        num_responses: int = 5) -> List[Dict]:
+                        template_name: str = "default") -> List[Dict]:
         """Process questions and return execution time."""
         try:
             # Load template
@@ -73,8 +75,7 @@ class QuestionInitializer:
             results = self.question_answerer.answer_questions(
                 questions,
                 self.datastore,
-                use_ground_truth,
-                num_responses
+                use_ground_truth
             )
             processing_time = time.time() - start_time
             
