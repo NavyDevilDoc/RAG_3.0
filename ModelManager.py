@@ -14,16 +14,15 @@ from typing import List, Any, Dict
 import os
 import sys
 from dotenv import load_dotenv
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_openai.embeddings import OpenAIEmbeddings
 from SentenceTransformerEmbeddings import SentenceTransformerEmbeddings
 
 class ModelManager:
     """Manages language models and embeddings initialization and operations."""
-    def __init__(self, env_path: str, mode: str= 'rag'):
+    def __init__(self, env_path: str):
         """Initialize ModelManager with environment variables."""
-        self.mode = mode.lower()
         self.load_environment_variables(env_path)
         self.llm_type = None
 
@@ -63,7 +62,7 @@ class ModelManager:
             )
 
 
-    def load_model(self, selected_llm_type: str, selected_llm: str, resource_manager: Dict) -> Any:
+    def load_model(self, selected_llm_type: str, selected_llm: str, resource_manager: Any) -> Any:
         """Load and configure language model."""
         try:
             # Store normalized LLM type for embedding validation
@@ -76,7 +75,9 @@ class ModelManager:
                                   streaming=True,)
             else:
                 return ChatOllama(model=selected_llm, 
-                                  **resource_manager,
+                                  top_k=50,
+                                  top_p=0.5,
+                                  temperature=0.5,
                                   disable_streaming=False)
         except Exception as e:
             print(f"Error loading model: {e}")
@@ -89,7 +90,7 @@ class ModelManager:
             embedding_type = embedding_type
             
             # Only enforce GPT-GPT pairing in LLM mode
-            if self.mode == 'llm' and self.llm_type == 'GPT' and embedding_type != 'GPT':
+            if self.llm_type == 'GPT' and embedding_type != 'GPT':
                 raise ValueError("GPT models require GPT embeddings in LLM mode")
             
             if embedding_type == 'GPT':
@@ -99,6 +100,8 @@ class ModelManager:
                 )
             elif embedding_type == 'SENTENCE_TRANSFORMER':
                 return SentenceTransformerEmbeddings(model_name=model_name)
+            elif embedding_type == 'OLLAMA':
+                return OllamaEmbeddings(model_name=model_name)
             else:
                 raise ValueError(f"Unsupported embedding type: {embedding_type}")
                 

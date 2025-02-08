@@ -18,17 +18,13 @@ from OCREnhancedPDFLoader import OCREnhancedPDFLoader
 from TextPreprocessor import TextPreprocessor
 
 class SemanticChunker:
-    """
-    Chunks text based on semantic similarity and size constraints.
-    """
-
+    """Chunks text based on semantic similarity and size constraints"""
     def __init__(self, chunk_size=200, chunk_overlap=0, similarity_threshold=0.9, separator=" ", sentence_model=None):
-        """Initialize the semantic chunker with configurable parameters."""
+        """Initialize the semantic chunker with configurable parameters"""
         if chunk_size <= 0:
             raise ValueError("chunk_size must be a positive integer.")
         if not (0 <= similarity_threshold <= 1):
             raise ValueError("similarity_threshold must be between 0 and 1.")
-        
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.similarity_threshold = similarity_threshold
@@ -40,16 +36,13 @@ class SemanticChunker:
             separator=self.separator 
         )
 
+
     def _enforce_size_immediately(self, text):
-        """
-        Split text into chunks while strictly enforcing size limits.
-        """
+        """Split text into chunks while strictly enforcing size limits"""
         if not text.strip():
             raise ValueError("Input 'text' cannot be empty or whitespace.")
-
         chunks, current_chunk = [], []
         words = text.split()
-
         for word in words:
             # Check if adding word would exceed size limit (including spaces)
             if sum(len(w) for w in current_chunk) + len(word) + len(current_chunk) <= self.chunk_size:
@@ -58,20 +51,16 @@ class SemanticChunker:
                 # Save current chunk and start a new one
                 chunks.append(" ".join(current_chunk))
                 current_chunk = [word]
-
         # Add final chunk if it exists
         if current_chunk:
             chunks.append(" ".join(current_chunk))
-
         return chunks
 
+
     def get_semantic_chunks(self, documents):
-        """
-        Process documents into semantically coherent chunks.
-        """
+        """Process documents into semantically coherent chunks"""
         # Initial document splitting
         base_chunks = self.text_splitter.split_documents(documents)
-        
         # Generate embeddings for semantic comparison
         chunk_embeddings = self.sentence_model.encode([doc.page_content for doc in base_chunks])
         grouped_chunks, current_group = [], []
@@ -81,7 +70,6 @@ class SemanticChunker:
                 current_group.append(base_chunk)
                 current_embedding = chunk_embeddings[i].reshape(1, -1)
                 continue
-
             # Calculate similarity and combine if appropriate
             similarity = cosine_similarity(current_embedding, chunk_embeddings[i].reshape(1, -1))[0][0]
             combined_content = " ".join([doc.page_content for doc in current_group] + [base_chunk.page_content])
@@ -93,31 +81,25 @@ class SemanticChunker:
                 grouped_chunks.extend(self._finalize_chunk_group(current_group))
                 current_group = [base_chunk]
                 current_embedding = chunk_embeddings[i].reshape(1, -1)
-
         # Finalize any remaining chunks
         if current_group:
             grouped_chunks.extend(self._finalize_chunk_group(current_group))
-
         return grouped_chunks
 
+
     def _finalize_chunk_group(self, group):
-        """
-        Process a group of related chunks into final documents.
-        """
+        """Process a group of related chunks into final documents."""
         processed_chunks = []
         content = " ".join([doc.page_content for doc in group])
         size_limited_chunks = self._enforce_size_immediately(content)
-        
         for chunk in size_limited_chunks:
             processed_chunks.append(Document(page_content=chunk, metadata=group[0].metadata))
-        
         return processed_chunks
     
 
-    def process_document(self, source_path: str, enable_preprocessing: bool = False) -> List[Document]:
+    def semantic_process_document(self, source_path: str, enable_preprocessing: bool = False) -> List[Document]:
         """Process document using semantic chunking strategy."""
         print("Performing semantic chunking...")
-        
         # Load and preprocess document text
         ocr_loader = OCREnhancedPDFLoader(source_path)
         text_preprocessor = TextPreprocessor()

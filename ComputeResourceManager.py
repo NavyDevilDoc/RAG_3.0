@@ -65,9 +65,9 @@ class ComputeResourceManager:
         """
         # Set default parameters for sampling behavior
         settings = {
-            'temperature': 0.1,
-            'top_k': 10,
-            'top_p': 0.2
+            'temperature': 0.5, # 0-1, higher values increase answer creativity
+            'top_k': 50, # 0-100, higher values increase answer diversity
+            'top_p': 0.5 # 0-1, higher values increase answer diversity
         }
         
         try:

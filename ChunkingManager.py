@@ -9,21 +9,14 @@ This module provides functionality to:
 """
 
 from typing import List, Any
-from enum import Enum
+from concurrent.futures import ThreadPoolExecutor
 from langchain_core.documents import Document
 from SemanticChunker import SemanticChunker
 from PageChunker import PageChunker
 from HierarchicalChunker import HierarchicalChunker
 from OCREnhancedPDFLoader import OCREnhancedPDFLoader
 from TextPreprocessor import TextPreprocessor
-
-class ChunkingMethod(Enum):
-    """
-    Supported document chunking methods.
-    """
-    SEMANTIC = "semantic"
-    PAGE = "page"
-    HIERARCHICAL = "hierarchical" 
+from storage_constants import ChunkingMethod
 
 
 def process_document(
@@ -33,18 +26,13 @@ def process_document(
     chunk_size: int = 500,
     chunk_overlap: int = 50,
     similarity_threshold: float = 0.85,
-    max_tokens: int = 8000,
+    #max_tokens: int = 8000,
     model_name = None,
     embedding_model=None
-) -> List[Document]:
-
-    """
-    Process documents using specified chunking method.
-    """
-
+    ) -> List[Document]:
+    """Process documents using specified chunking method."""
     if embedding_model is None:
         raise ValueError("Embedding model must be provided.")
-
     try:
         if method == ChunkingMethod.SEMANTIC:
             return _semantic_chunking(
@@ -84,11 +72,9 @@ def _semantic_chunking(
     chunk_size: int,
     chunk_overlap: int,
     similarity_threshold: float,
-) -> List[Document]:
+    ) -> List[Document]:
 
-    """
-    Process document using semantic chunking strategy.
-    """
+    """Process document using semantic chunking strategy."""
 
     print("Performing semantic chunking...")
     semantic_chunker = SemanticChunker(
@@ -122,20 +108,16 @@ def _page_chunking(
         embedding_model: Any
         ) -> List[Document]:
 
-    """
-    Process document using page-based chunking strategy.
-    """
-
+    """Process document using page-based chunking strategy."""
     print("Processing document by pages...")
     # Pass the pre-initialized embedding model to PageChunker
     page_chunker = PageChunker(model_name=model_name, embedding_model=embedding_model)
-    documents = page_chunker.process_document(source_path, preprocess=preprocess)
+    documents = page_chunker.page_process_document(source_path, preprocess=preprocess)
     
     # Report token counts per page
     print(f"Processed {len(documents)} pages")
     for doc in documents:
         print(f"Page {doc.metadata['page']}: {doc.metadata['token_count']} tokens")
-    
     return documents
 
 def _hierarchical_chunking(
@@ -156,12 +138,10 @@ def _hierarchical_chunking(
         chunk_overlap=chunk_overlap,
         similarity_threshold=similarity_threshold
     )
-    
-    result = hierarchical_chunker.process_document(
+    result = hierarchical_chunker.hierarchical_process_document(
         source_path, 
         preprocess=enable_preprocessing
     )
-    
     # Flatten hierarchical structure for compatibility
     documents = result["pages"] + result["chunks"]
     print(f"Processed {len(result['pages'])} pages and {len(result['chunks'])} chunks")

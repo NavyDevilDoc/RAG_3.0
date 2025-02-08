@@ -1,41 +1,19 @@
 import time
 import sys
-from langchain_community.vectorstores import DocArrayInMemorySearch
+from langchain_community.vectorstores import InMemoryVectorStore
 from langchain_pinecone import PineconeVectorStore
-
-PINECONE_NEW = 0
-PINECONE_ADD = 1
-PINECONE_EXISTING = 2
-LOCAL_STORAGE = 3
+from storage_constants import StorageType
 
 class PineconeManager:
     def __init__(self, pc, api_key, dimensions, selected_embedding_model):
-        """
-        Initialize the PineconeManager with Pinecone client and configurations.
-
-        Args:
-            pc: Pinecone client instance.
-            api_key: Pinecone API key.
-            dimensions: Dimensionality of the embeddings.
-            selected_embedding_model: Embedding model name for index naming.
-        """
+        """Initialize the PineconeManager with Pinecone client and configurations."""
         self.pc = pc
         self.api_key = api_key
         self.dimensions = dimensions
         self.selected_embedding_model = selected_embedding_model
 
     def setup_index(self, index_name, spec, timeout=300):
-        """
-        Create or reset a Pinecone index.
-
-        Args:
-            index_name: Name of the index.
-            spec: ServerlessSpec object for Pinecone index.
-            timeout: Maximum time (in seconds) to wait for readiness.
-
-        Returns:
-            Pinecone index object.
-        """
+        """Create or reset a Pinecone index."""
         try:
             if index_name in self.pc.list_indexes().names():
                 print(f"\nDeleting existing index: {index_name}")
@@ -58,37 +36,45 @@ class PineconeManager:
             print(f"\nError setting up Pinecone index: {e}")
             sys.exit(1)
 
-    def setup_datastore(self, data_storage, documents, embeddings, index_name):
-        """
-        Configure the datastore based on the specified storage method.
+## Need to add PINECONE_REMOVE and PINECONE_DELETE features at some point ##
 
-        Args:
-            data_storage: Storage option (0: New, 1: Add, 2: Existing, 3: Local).
-            documents: List of document objects to store.
-            embeddings: Embedding model for vectorizing documents.
-            index_name: Name of the Pinecone index.
-
-        Returns:
-            Configured datastore object.
-        """
+    def setup_datastore(self, data_storage: StorageType, documents, embeddings, index_name):
+        """Configure the datastore based on the specified storage method."""
+        if not isinstance(data_storage, StorageType):
+            raise TypeError(f"Expected StorageType enum, got {type(data_storage)}")
+            
         try:
-            if data_storage == PINECONE_NEW:
+            print(f"\nConfiguring datastore with storage type: {data_storage}")
+            
+            if data_storage == StorageType.PINECONE_NEW:
                 print(f"\nUploading documents to new Pinecone index '{index_name}'")
-                datastore = PineconeVectorStore.from_documents(documents, embedding=embeddings, index_name=index_name)
-            elif data_storage == PINECONE_ADD:
+                datastore = PineconeVectorStore.from_documents(
+                    documents=documents, 
+                    embedding=embeddings, 
+                    index_name=index_name
+                )
+
+            elif data_storage == StorageType.PINECONE_ADD:
                 print(f"\nAdding documents to existing Pinecone index '{index_name}'")
                 datastore = PineconeVectorStore.from_existing_index(index_name, embeddings)
                 datastore.add_documents(documents)
-            elif data_storage == PINECONE_EXISTING:
+
+            elif data_storage == StorageType.PINECONE_EXISTING:
                 print(f"\nUsing existing Pinecone index '{index_name}'")
                 datastore = PineconeVectorStore.from_existing_index(index_name, embeddings)
-            elif data_storage == LOCAL_STORAGE:
+                
+            elif data_storage == StorageType.LOCAL_STORAGE:
                 print("\nStoring documents locally in memory")
-                datastore = DocArrayInMemorySearch.from_documents(documents, embeddings)
+                datastore = InMemoryVectorStore.from_documents(documents, embeddings)
             else:
-                raise ValueError(f"Invalid data_storage option: {data_storage}")
+                raise ValueError(f"Unhandled storage type: {data_storage}")
+            
             print("\nDatastore successfully configured.")
             return datastore
+        
         except Exception as e:
-            print(f"Error setting up datastore: {e}")
-            sys.exit(1)
+            error_msg = f"Error setting up datastore: {str(e)}\n"
+            error_msg += f"Storage type: {data_storage}\n"
+            error_msg += f"Index name: {index_name}"
+            print(error_msg)
+            raise RuntimeError(error_msg) from e

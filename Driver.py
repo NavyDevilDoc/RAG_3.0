@@ -1,21 +1,13 @@
 # Driver.py - Driver class for RAG model execution
 
-import os
-from RAGInitializer import EmbeddingType, RAGConfig, initialize_rag_components
-from CombinedProcessor import CombinedProcessor, ChunkingMethod
-from storage_constants import StorageType
+from RAGInitializer import RAGConfig, initialize_rag_components
+from CombinedProcessor import CombinedProcessor
 from QuestionInitializer import QuestionInitializer
 from TextPreprocessor import TextPreprocessor
 from ResponseFormatter import QAResponse
-from LLMQueryManager import LLMQueryManager, LLMType
-from sentence_transformers import SentenceTransformer
-from langchain_openai.embeddings import OpenAIEmbeddings
+from FileUtils import TypeConverter
 from typing import List
-from tqdm import tqdm
-import time
 import warnings
-import json
-from datetime import datetime
 warnings.filterwarnings("ignore")
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -36,14 +28,10 @@ class Driver:
         storage_type: str = 'PINECONE_EXISTING',
         template_name: str = 'default',
         use_ground_truth: bool = False,
-        debug_mode: bool = False,
-        mode: str = 'rag',
         process_questions: bool = True
     ):
         """Initialize RAG driver based on mode."""
-        self.mode = mode.lower()
         self.should_process_questions = process_questions
-        
         # For all modes
         self.env_path = env_path
         self.json_path = json_path
@@ -51,133 +39,45 @@ class Driver:
         self.embedding_type = embedding_type
         self.llm_model = llm_model
         self.embedding_model = embedding_model
-        self.debug_mode = debug_mode
-
-
-        # Initialize LLM query manager for direct queries
-        if self.mode == 'llm':
-            if self.llm_type.lower() == 'ollama':
-                self._initialize_ollama_model_with_progress()
-            else:
-                self.llm_query = LLMQueryManager(
-                    env_path=env_path,
-                    json_path=json_path,
-                    llm_type=llm_type,
-                    llm_model=llm_model,
-                    embedding_type=embedding_type,
-                    embedding_model=embedding_model,
-                    debug_mode=debug_mode
-                )
-            return  # Early exit - don't initialize RAG components
             
-        # Only initialize RAG components if in RAG mode
-        if self.mode == 'rag':
-            self.doc_input = doc_input
-            self.embedding_type = embedding_type
-            self.embedding_index = embedding_model
-            self.doc_name = doc_name
-            self.chunking_method = chunking_method
-            self.storage_type = storage_type
-            self.template_name = template_name
-            self.use_ground_truth = use_ground_truth
+        self.doc_input = doc_input
+        self.embedding_type = embedding_type
+        self.embedding_index = embedding_model
+        self.doc_name = doc_name
+        self.chunking_method = chunking_method
+        self.storage_type = storage_type
+        self.template_name = template_name
+        self.use_ground_truth = use_ground_truth
             
-            # Initialize instance variables
-            self.model = None
-            self.embeddings = None
-            self.dimensions = None
-            self.selected_llm = None
-            self.selected_embedding_model = None
-            self.model_manager = None
-            self.datastore = None
-            #self.embedding_type = None
+        # Initialize instance variables
+        self.model = None
+        self.embeddings = None
+        self.dimensions = None
+        self.selected_llm = None
+        self.selected_embedding_model = None
+        self.model_manager = None
+        self.datastore = None
 
 
     def set_doc_input(self, doc_input: List[str]):
         """Set document input paths after initialization."""
         self.doc_input = doc_input
 
-
-    def _initialize_ollama_model_with_progress(self):
-        """Initialize Ollama model with a progress bar."""
-        with tqdm(total=100, desc="Loading Ollama Model", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]") as pbar:
-            for i in range(10):
-                time.sleep(0.5)  # Simulate loading time
-                pbar.update(10)
-        
-        self.llm_query = LLMQueryManager(
-            env_path=self.env_path,
-            json_path=self.json_path,
-            llm_type=self.llm_type,
-            llm_model=self.llm_model,
-            embedding_type=self.embedding_type,
-            embedding_model=self.embedding_model,
-            debug_mode=self.debug_mode
-        )
-
-
-    @staticmethod
-    def _convert_llm_type(llm_type_str: str) -> LLMType:
-        """Convert string to LLMType enum case-insensitively"""
-        try:
-            return getattr(LLMType, llm_type_str.upper())
-        except AttributeError:
-            raise ValueError(f"Invalid LLM type: {llm_type_str}. Must be one of: {[t.name for t in LLMType]}")
-
-    @staticmethod
-    def _convert_embedding_type(embedding_type_str: str) -> EmbeddingType:
-        """Convert string to EmbeddingType enum case-insensitively"""
-        try:
-            return getattr(EmbeddingType, embedding_type_str.upper())
-        except AttributeError:
-            raise ValueError(f"Invalid embedding type: {embedding_type_str}. Must be one of: {[t.name for t in EmbeddingType]}")
-    
-    @staticmethod
-    def _convert_chunking_method(chunking_method_str: str) -> ChunkingMethod:
-        return getattr(ChunkingMethod, chunking_method_str)
-    
-    @staticmethod
-    def _convert_storage_type(storage_type_str: str) -> StorageType:
-        return getattr(StorageType, storage_type_str)
-    
-    @staticmethod
-    def _convert_storage_type(storage_type_str: str) -> StorageType:
-        return StorageType.from_string(storage_type_str)
-
-    @staticmethod
-    def find_pdfs_in_folder(folder_path: str) -> list:
-        """Find all PDF files in the specified folder and return their file paths."""
-        pdf_files = []
-        for root, dirs, files in os.walk(folder_path):
-            print(f"Found {len(files)} files in {root}")
-            for file in files:
-                if file.lower().endswith('.pdf'):
-                    pdf_files.append(os.path.join(root, file))
-        return pdf_files
-    
-
     def setup(self):
         """Initialize RAG components and process documents."""
         # Initialize RAG components
         config = RAGConfig(
             env_path=self.env_path,
-            llm_type=self._convert_llm_type(self.llm_type),
-            embedding_type=self._convert_embedding_type(self.embedding_type),
+            llm_type=TypeConverter.convert_llm_type(self.llm_type),
+            embedding_type=TypeConverter.convert_embedding_type(self.embedding_type),
             llm_model=self.llm_model,
             embedding_model=self.embedding_model,
-            mode=self.mode
         )
         components = initialize_rag_components(config)
-        if len(components) == 6:  # Full RAG mode
-            (self.model, self.embeddings, self.dimensions, 
-            self.selected_llm, self.selected_embedding_model, 
-            self.model_manager) = components
-        elif len(components) == 4:  # LLM mode
-            (self.model, self.embeddings, self.selected_llm, 
-            self.selected_embedding_model) = components
-            self.dimensions = None  # Set default
-            self.model_manager = None  # Set default
-        else:
-            raise ValueError(f"Unexpected number of components: {len(components)}")
+        (self.model, self.embeddings, self.dimensions, 
+        self.selected_llm, self.selected_embedding_model, 
+        self.model_manager) = components
+
         
         if self.model and self.embeddings and self.dimensions:
             print("\nRAG components successfully initialized.")
@@ -191,8 +91,8 @@ class Driver:
             embedding_model=self.selected_embedding_model,
             embeddings=self.embeddings,
             dimensions=self.dimensions,
-            chunking_method=self._convert_chunking_method(self.chunking_method),
-            storage_type=self._convert_storage_type(self.storage_type),
+            chunking_method=TypeConverter.convert_chunking_method(self.chunking_method),
+            storage_type=TypeConverter.convert_storage_type(self.storage_type),
             model_name=self.selected_llm,
         )
         
@@ -206,14 +106,13 @@ class Driver:
         
         if not questions:
             raise ValueError("Questions list cannot be empty")
-        
-        print(f"Processing questions: {questions}")  # Debugging statement
-                
+                        
         processor = QuestionInitializer(
             datastore=self.datastore,
             model=self.model,
             embedding_model=self.selected_embedding_model,
             embedding_type=self.embedding_type,
+            num_responses=7
         )
         
         try:
@@ -223,18 +122,15 @@ class Driver:
                 template_name=self.template_name,     
                 use_ground_truth=self.use_ground_truth[0] if isinstance(self.use_ground_truth, tuple) else self.use_ground_truth
             )
-            
             # Unpack tuple if needed
             if isinstance(result, tuple):
-                results = result[0]  # Get just the results, ignore processing time
+                results = result[0]
             else:
                 results = result
-                
             # Ensure results is a list
             if not isinstance(results, list):
                 print(f"Warning: Invalid results format after unpacking: {type(results)}")
                 return []
-                
             responses = []
             text_processor = TextPreprocessor()
             # Map each result to its corresponding question
@@ -266,68 +162,6 @@ class Driver:
             
         except Exception as e:
             raise RuntimeError(f"Error processing questions: {e}")
-
-
-    def process_query(self, query: str, use_history: bool = True) -> str:
-        """Process query with conversation history support."""
-        text_processor = TextPreprocessor()
-        
-        if self.mode == 'llm':
-            if not self.llm_query:
-                raise RuntimeError("LLM mode not initialized")
-            response = self.llm_query.ask(query, use_history=use_history)
-            qa_response = QAResponse(question=query, answer=response, confidence=0.0)
-            formatted_response = text_processor.format_text(response)
-            token_count = text_processor.count_tokens(formatted_response)
-            return f"{formatted_response}\n\nToken Count: {token_count}"
-        else:
-            qa_response = self.process_questions([query])[0]
-            formatted_response = text_processor.format_text(qa_response.answer)
-            token_count = text_processor.count_tokens(formatted_response)
-            return f"{formatted_response}\n\nToken Count: {token_count}"
-
-
-    def clear_conversation_history(self):
-        """Clear the conversation history in LLM mode."""
-        if self.mode == 'llm' and self.llm_query:
-            # Save current conversation history with a user-defined name
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            default_name = f"conversation_history_{timestamp}.json"
-            user_input = input(f"Enter a name for the conversation history file (default: {default_name}): ")
-            user_named_file = os.path.join(self.llm_query.json_path, user_input or default_name)  # Use json_path directly
-            
-            # Copy contents of conversation_history.json to user-named file
-            if os.path.exists(self.llm_query.history_file):
-                with open(self.llm_query.history_file, 'r', encoding='utf-8') as src:
-                    conversation_history = json.load(src)
-                with open(user_named_file, 'w', encoding='utf-8') as dst:
-                    json.dump(conversation_history, dst, indent=2)
-            else:
-                print(f"Warning: {self.llm_query.history_file} does not exist. No history to copy.")
-            
-            # Clear the conversation history
-            self.llm_query.conversation_history = []
-            self.llm_query.save_history()
-            
-            return user_input or default_name  # Return the user-defined name
-
-
-    def load_existing_conversation(self, file_path: str):
-        """Load an existing conversation history from a specified file."""
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                self.llm_query.conversation_history = json.load(f)
-                self.llm_query.save_history()
-        except Exception as e:
-            print(f"Error loading existing conversation: {e}")
-
-
-    def get_conversation_history(self):
-        """Get the current conversation history in LLM mode."""
-        if self.mode == 'llm' and self.llm_query:
-            return self.llm_query.conversation_history
-        return []
-
 
     def run(self, questions: List[str]) -> List[str]:
         """Run complete RAG pipeline."""

@@ -13,4 +13,24 @@ class StorageType(Enum):
         try:
             return cls[storage_type.upper()]
         except KeyError:
-            raise ValueError(f"Invalid storage type: {storage_type}")
+            valid_types = [t.name for t in cls]
+            raise ValueError(f"Invalid storage type: {storage_type}. Valid types are: {valid_types}")
+
+    def __str__(self):
+        return self.name
+    
+class LLMType(Enum):
+    """Available LLM types."""
+    GPT = 'gpt'
+    OLLAMA = 'ollama'
+
+class EmbeddingType(Enum):
+    GPT = "gpt" 
+    SENTENCE_TRANSFORMER = "sentence_transformer"
+    OLLAMA = "ollama"
+
+class ChunkingMethod(Enum):
+    """Supported document chunking methods."""
+    SEMANTIC = "semantic"
+    PAGE = "page"
+    HIERARCHICAL = "hierarchical" 

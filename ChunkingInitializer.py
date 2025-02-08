@@ -8,19 +8,20 @@ This module handles the complete document processing pipeline including:
 - Document chunking with various strategies
 """
 
-from typing import List, Optional, Any, Tuple
+from typing import List, Optional, Any
 from langchain_core.documents import Document
 from sentence_transformers import SentenceTransformer
 from OCREnhancedPDFLoader import OCREnhancedPDFLoader
 from TextPreprocessor import TextPreprocessor
-from ChunkingManager import ChunkingMethod, process_document
+from ChunkingManager import process_document
+from storage_constants import ChunkingMethod
 
 class ChunkingInitializer:
     """Orchestrates document processing workflow including OCR, preprocessing, and chunking."""
     def __init__(self, 
                  source_path: str,
                  chunking_method: ChunkingMethod = ChunkingMethod.PAGE,
-                 enable_preprocessing: bool = False,
+                 enable_preprocessing: bool = True,
                  chunk_size: int = 500,
                  chunk_overlap: int = 50,
                  similarity_threshold: float = 0.85,
@@ -86,10 +87,6 @@ class ChunkingInitializer:
     def process(self) -> List[Document]:
         """Execute the complete document processing pipeline."""
         try:
-            # Load and preprocess documents
-            raw_documents = self._load_documents()
-            processed_documents = self._preprocess_documents(raw_documents)
-            
             # Process documents using specified chunking method
             documents = process_document(
                 source_path=self.source_path,
@@ -101,7 +98,6 @@ class ChunkingInitializer:
                 model_name=self.model_name,
                 embedding_model=self.embedding_model,
             )
-            
             print(f"Processed {len(documents)} document chunks")
             return documents
             

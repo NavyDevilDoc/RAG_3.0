@@ -9,7 +9,6 @@ import re
 
 class TextPreprocessor:
     """A class to preprocess text for NLP tasks."""
-    
     def __init__(self):
         """Initialize the text preprocessor with required NLTK resources."""
         try:
@@ -41,17 +40,7 @@ class TextPreprocessor:
         return [self.lemmatizer.lemmatize(word) for word in words]
 
     def preprocess(self, text):
-        """Clean and preprocess text for NLP tasks.
-        
-        Args:
-            text (str): Raw input text to be cleaned and preprocessed.
-            
-        Returns:
-            str: Processed text with standardized formatting, no stopwords, and lemmatized words.
-            
-        Raises:
-            Exception: If an error occurs during preprocessing.
-        """
+        """Clean and preprocess text for NLP tasks."""
         try:
             # Apply preprocessing steps
             text = self.standardize_case(text)
@@ -70,7 +59,6 @@ class TextPreprocessor:
 
     def format_text(self, text: str, line_length: int = 100) -> str:
         """Format text by adding newlines after colons and wrapping text."""
-        
         try:
             # Add newline after colons
             text = text.replace(':', ':\n')
@@ -80,7 +68,7 @@ class TextPreprocessor:
             formatted_text = ''
             current_length = 0
             
-            for word in text.split(' '):
+            for word in words: #made changes here
                 word_length = len(word)
                 
                 if current_length + word_length + 1 > line_length:

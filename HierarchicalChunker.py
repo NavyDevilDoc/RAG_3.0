@@ -26,15 +26,16 @@ class HierarchicalChunker(PageChunker):
                          capture_output=True)
             self.nlp = spacy.load("en_core_web_sm")
 
+
     def _analyze_chunk(self, content: str) -> dict:
         """Analyze chunk content using parent class methods."""
         return self._analyze_page(content)  # Reuse parent analysis
 
-    def _create_semantic_chunks(self, content: str, page_num: int) -> List[Document]:
+
+    def _create_semantic_chunks(self, content: str, page_number: int) -> List[Document]:
         """Create semantic chunks with detailed metadata."""
         if not content.strip():
             return []
-
         sentences = list(self.nlp(content).sents)
         chunks = []
         current_chunk = []
@@ -52,9 +53,9 @@ class HierarchicalChunker(PageChunker):
                         page_content=chunk_text,
                         metadata={
                             "level": "chunk",
-                            "page_num": page_num,
+                            "page_num": page_number,
                             "chunk_num": len(chunks),
-                            "parent_page": page_num,
+                            "parent_page": page_number,
                             "char_count": stats["char_count"],
                             "token_count": stats["token_count"],
                             "sentence_count": stats["sentence_count"],
@@ -76,9 +77,9 @@ class HierarchicalChunker(PageChunker):
                 page_content=chunk_text,
                 metadata={
                     "level": "chunk",
-                    "page_num": page_num,
+                    "page_num": page_number,
                     "chunk_num": len(chunks),
-                    "parent_page": page_num,
+                    "parent_page": page_number,
                     "char_count": stats["char_count"],
                     "token_count": stats["token_count"],
                     "sentence_count": stats["sentence_count"],
@@ -86,17 +87,16 @@ class HierarchicalChunker(PageChunker):
                     "has_ocr": str(stats["has_ocr"])
                 }
             ))
-
-        self.page_stats.append(f"Created {len(chunks)} chunks for page {page_num}")
+        self.page_stats.append(f"Created {len(chunks)} chunks for page {page_number}")
         return chunks
 
-    def process_document(self, file_path: str, preprocess: bool = False) -> Dict[str, List[Document]]:
+
+    def hierarchical_process_document(self, file_path: str, preprocess: bool = True) -> Dict[str, List[Document]]:
         """Process document with enhanced stats tracking."""
         self.page_stats = []  # Reset stats
-        page_docs = super().process_document(file_path, preprocess)
+        page_docs = super().page_process_document(file_path, preprocess)
         chunk_docs = []
         total_chunks = 0
-
         for page_doc in page_docs:
             page_num = page_doc.metadata["page"]
             page_doc.metadata["level"] = "page"
@@ -106,12 +106,10 @@ class HierarchicalChunker(PageChunker):
             )
             chunk_docs.extend(page_chunks)
             total_chunks += len(page_chunks)
-
         print(f"\nHierarchical Processing Summary:")
         print(f"Total Pages: {len(page_docs)}")
         print(f"Total Chunks: {total_chunks}")
         print("\n".join(self.page_stats))
-
         return {
             "pages": page_docs,
             "chunks": chunk_docs

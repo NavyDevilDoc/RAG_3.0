@@ -10,7 +10,7 @@ from typing import Union, List, Any
 from pathlib import Path
 import sys
 from ChunkingInitializer import ChunkingInitializer
-from ChunkingManager import ChunkingMethod
+from storage_constants import ChunkingMethod
 from ModelManager import ModelManager
 from DatastoreInitializer import DatastoreInitializer
 from storage_constants import StorageType
@@ -23,7 +23,7 @@ class CombinedProcessor:
                  embeddings: Any,
                  dimensions: int,
                  chunking_method: ChunkingMethod = ChunkingMethod.SEMANTIC,
-                 enable_preprocessing: bool = False,
+                 enable_preprocessing: bool = True,
                  storage_type: StorageType = StorageType.PINECONE_NEW,
                  model_name: str = None,
                  ):

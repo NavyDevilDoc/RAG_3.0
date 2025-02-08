@@ -1,5 +1,3 @@
-# PageChunker.py
-
 """
 PageChunker.py
 
@@ -26,46 +24,11 @@ nlp = spacy.load("en_core_web_sm")
 
 class PageChunker:
 
-    """
-    Handles document chunking at the page level with token counting.
-
-    Features:
-    1. Multiple tokenizer support
-    2. Page-level processing
-    3. Token count validation
-    4. Blank page detection
-    5. OCR integration
-
-    Attributes:
-        BLANK_THRESHOLD (int): Minimum characters for non-blank page
-        model_name (str): Name of language model
-        tokenizer (Any): Tokenizer instance
-        uses_tiktoken (bool): Whether using tiktoken
-        uses_basic_tokenizer (bool): Whether using basic tokenizer
-        embedding_model (Any): Model for embeddings
-
-    Example:
-        >>> chunker = PageChunker(
-        ...     model_name="gpt-3.5-turbo",
-        ...     embedding_model=embeddings
-        ... )
-        >>> chunks = chunker.process_document("doc.pdf")
-    """
-
+    """Handles document chunking at the page level with token counting."""
     BLANK_THRESHOLD = 10  # Minimum character count to consider a page non-blank
-
     def __init__(self, model_name=None, embedding_model=None):
         """
-        Initialize page chunker with specified models.
-        
-        Args:
-            model_name (Optional[str]): Name of language model
-            embedding_model (Optional[Any]): Embedding model instance
-
-        Raises:
-            ValueError: If model configuration is invalid
-            RuntimeError: If tokenizer initialization fails
-        """
+        Initialize page chunker with specified models."""
         self.model_name = model_name
         self.uses_tiktoken = False  # Default to False
         self.uses_basic_tokenizer = False  # Flag for Ollama models
@@ -74,7 +37,6 @@ class PageChunker:
         tiktoken_supported_models = [
             "gpt-3.5-turbo", "gpt-4", "text-davinci-003", "gpt-4o", "text-embedding-ada-002", "text-embedding-3-large"
         ]
-
         try:
             if model_name in tiktoken_supported_models:
                 # Use tiktoken if the model is supported
@@ -99,27 +61,13 @@ class PageChunker:
 
 
     def _is_blank_page(self, text: str) -> bool:
-        """Check if page is blank or contains only whitespace/special characters.
-        
-        Args:
-            text (str): Page content to analyze.
-            
-        Returns:
-            bool: True if page is considered blank, False otherwise.
-        """
+        """Check if page is blank or contains only whitespace/special characters."""
         cleaned_text = text.strip().replace('\n', '').replace('\r', '').replace('\t', '')
         return len(cleaned_text) < self.BLANK_THRESHOLD
 
 
     def _count_tokens(self, text: str) -> int:
-        """Count tokens in text using the specified tokenizer.
-        
-        Args:
-            text (str): Text to tokenize.
-            
-        Returns:
-            int: Number of tokens in text, 0 if error occurs.
-        """
+        """Count tokens in text using the specified tokenizer."""
         try:
             if self.uses_tiktoken:
                 # Use tiktoken to count tokens
@@ -136,17 +84,9 @@ class PageChunker:
 
 
     def _get_page_embedding(self, text: str) -> Optional[np.ndarray]:
-        """Generate embedding vector for page text.
-        
-        Args:
-            text (str): Text to embed.
-            
-        Returns:
-            Optional[np.ndarray]: Embedding vector, or None if error occurs.
-        """
+        """Generate embedding vector for page text."""
         if not text.strip():
             return None
-        
         try:
             return self.embedding_model.encode(text)
         except Exception as e:
@@ -154,15 +94,7 @@ class PageChunker:
         
         
     def _analyze_page(self, text: str) -> dict:
-        """Perform detailed analysis of page content.
-        
-        Args:
-            text (str): Page content to analyze.
-            
-        Returns:
-            dict: Statistics including character count, token count, sentence count, word count,
-                  embedding dimension, and OCR status.
-        """
+        """Perform detailed analysis of page content."""
         try:
             embedding = self._get_page_embedding(text)
             return {
@@ -184,26 +116,16 @@ class PageChunker:
                 "has_ocr": False
             }
 
+
     def _process_single_page(self, content: str, page_number: int, preprocess: bool) -> Optional[Document]:
-        """Process a single page with optional preprocessing and analysis.
-        
-        Args:
-            content (str): Page content to process.
-            page_number (int): Page number for metadata.
-            preprocess (bool): Whether to preprocess the text.
-            
-        Returns:
-            Optional[Document]: Processed Document object, or None if page is blank.
-        """
+        """Process a single page with optional preprocessing and analysis."""
         if self._is_blank_page(content):
             self.page_stats.append(f"Page {page_number} is blank.")
             return None
-
         # Optionally preprocess the text
         if preprocess:
             preprocess_text = TextPreprocessor().preprocess
             content = preprocess_text(content)
-        
         # Analyze the page and generate metadata
         stats = self._analyze_page(content)
         metadata = {
@@ -215,38 +137,23 @@ class PageChunker:
             "has_ocr": str(stats["has_ocr"]),
             "is_blank": "false"
         }
-        
         return Document(page_content=content, metadata=metadata)
 
-    def process_document(self, file_path: str, preprocess: bool = False) -> List[Document]:
-        """Process PDF document page by page with analysis and optional preprocessing.
-        
-        Args:
-            file_path (str): Path to PDF file.
-            preprocess (bool): Whether to apply text preprocessing.
-            
-        Returns:
-            List[Document]: List of processed pages as Document objects.
-            
-        Raises:
-            Exception: If error occurs during processing.
-        """
+
+    def page_process_document(self, file_path: str, preprocess: bool = False) -> List[Document]:
+        """Process PDF document page by page with analysis and optional preprocessing."""
         try:
             loader = OCREnhancedPDFLoader(file_path)
             raw_pages = loader.load()
             processed_pages = []
-
             for idx, page in enumerate(raw_pages):
                 processed_page = self._process_single_page(page.page_content, idx + 1, preprocess)
                 if processed_page:
                     processed_pages.append(processed_page)
-
             # Output skipped pages for transparency
             if self.page_stats:
                 print("\n".join(self.page_stats))
-
             return processed_pages
-            
         except Exception as e:
             print(f"Error in process_document: {e}")
             raise

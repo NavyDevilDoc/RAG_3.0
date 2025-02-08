@@ -1,15 +1,10 @@
 # RAGInitializer.py
-from enum import Enum
 from dataclasses import dataclass
 from typing import Dict, Tuple, Any
 from ModelManager import ModelManager
 from ComputeResourceManager import ComputeResourceManager
-from LLMQueryManager import LLMType
+from storage_constants import LLMType, EmbeddingType
 
-class EmbeddingType(Enum):
-    GPT = "gpt" 
-    SENTENCE_TRANSFORMER = "sentence_transformer"
-    OLLAMA = "ollama"
 
 @dataclass
 class RAGConfig:
@@ -18,7 +13,6 @@ class RAGConfig:
     embedding_type: EmbeddingType
     llm_model: str
     embedding_model: str 
-    mode: str = 'rag'
 
     def to_dict(self) -> Dict[str, str]:
         """Convert config to format expected by ModelManager"""
@@ -30,7 +24,7 @@ class RAGConfig:
 def initialize_rag_components(config: RAGConfig) -> Tuple[Any, Any, int]:
     """Initialize RAG components using ModelManager's existing methods"""
     try:
-        model_manager = ModelManager(config.env_path, mode=config.mode)
+        model_manager = ModelManager(config.env_path)
         resource_manager = ComputeResourceManager().get_compute_settings()
         
         model, embeddings, dimensions, selected_llm, selected_embedding_model = model_manager.validate_and_load_models(

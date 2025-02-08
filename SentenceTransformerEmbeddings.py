@@ -8,7 +8,7 @@ class SentenceTransformerEmbeddings(Embeddings):
     def __init__(self, model_name: str):
         try:
             self.model = SentenceTransformer(model_name)
-            print(f"Loaded SentenceTransformer model '{model_name}' successfully.")
+            #print(f"Loaded SentenceTransformer model '{model_name}' successfully.")
         except Exception as e:
             raise ValueError(f"Error loading SentenceTransformer model '{model_name}': {e}")
         
@@ -25,9 +25,9 @@ class SentenceTransformerEmbeddings(Embeddings):
             raise ValueError("Input 'text' must not be empty.")
         
         try:
-            print(f"Embedding query in SentenceTransformerEmbeddings: {text}")
+            #print(f"Embedding query in SentenceTransformerEmbeddings: {text}")
             embedding = self.model.encode([text])[0]
-            print("Query successfully embedded")
+            #print("Query successfully embedded")
             return embedding.tolist()
         except Exception as e:
             print(f"Error embedding query: {str(e)}")

@@ -1,3 +1,4 @@
+python.exe -m pip install --upgrade pip
 absl-py==2.1.0
 aiohappyeyeballs==2.4.4
 aiohttp==3.10.11
@@ -26,7 +27,6 @@ dill==0.3.8
 distro==1.9.0
 docarray==0.40.0
 einops==0.8.0
-en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
 evaluate==0.4.3
 executing==2.1.0
 filelock==3.16.1
@@ -141,9 +141,6 @@ thinc==8.3.4
 threadpoolctl==3.5.0
 tiktoken==0.8.0
 tokenizers==0.21.0
-torch==2.5.1+cu118
-torchaudio==2.5.1+cu118
-torchvision==0.20.1+cu118
 tornado==6.4.2
 tqdm==4.67.1
 traitlets==5.14.3
