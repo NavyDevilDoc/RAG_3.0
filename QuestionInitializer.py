@@ -33,7 +33,7 @@ class QuestionInitializer:
         self.num_responses = num_responses
 
         # Initialize components
-        self.template_manager = TemplateManager(template_path)
+        self.template_manager = TemplateManager()
         self.chain_manager = None
         self.question_answerer = None
 

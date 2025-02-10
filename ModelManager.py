@@ -67,7 +67,6 @@ class ModelManager:
         try:
             # Store normalized LLM type for embedding validation
             self.llm_type = selected_llm_type.upper()
-            
             # Case insensitive comparison
             if selected_llm_type.lower() == "gpt":
                 return ChatOpenAI(openai_api_key=self.openai_api_key, 
@@ -88,23 +87,17 @@ class ModelManager:
         """Load and configure embedding model with type validation."""
         try:
             embedding_type = embedding_type
-            
             # Only enforce GPT-GPT pairing in LLM mode
             if self.llm_type == 'GPT' and embedding_type != 'GPT':
                 raise ValueError("GPT models require GPT embeddings in LLM mode")
-            
             if embedding_type == 'GPT':
-                return OpenAIEmbeddings(
-                    model=model_name,
-                    openai_api_key=self.openai_api_key
-                )
+                return OpenAIEmbeddings(model=model_name,openai_api_key=self.openai_api_key)
             elif embedding_type == 'SENTENCE_TRANSFORMER':
                 return SentenceTransformerEmbeddings(model_name=model_name)
             elif embedding_type == 'OLLAMA':
-                return OllamaEmbeddings(model_name=model_name)
+                return OllamaEmbeddings(model=model_name, base_url="http://localhost:11434")
             else:
                 raise ValueError(f"Unsupported embedding type: {embedding_type}")
-                
         except Exception as e:
             print(f"Error loading embeddings: {e}")
             sys.exit(1)
@@ -113,7 +106,7 @@ class ModelManager:
     def determine_embedding_dimensions(self, embeddings: Any) -> int:
         """Determine embedding dimensions using sample text."""
         try:
-            text = "This is a text document."
+            text = "This is a test document."
             embedding = embeddings.embed_documents([text])[0]
             print(f"Embedding dimensions: {len(embedding)}")
             return len(embedding)

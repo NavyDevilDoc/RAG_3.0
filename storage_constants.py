@@ -20,7 +20,6 @@ class StorageType(Enum):
         return self.name
     
 class LLMType(Enum):
-    """Available LLM types."""
     GPT = 'gpt'
     OLLAMA = 'ollama'
 
@@ -30,7 +29,7 @@ class EmbeddingType(Enum):
     OLLAMA = "ollama"
 
 class ChunkingMethod(Enum):
-    """Supported document chunking methods."""
     SEMANTIC = "semantic"
     PAGE = "page"
     HIERARCHICAL = "hierarchical" 
+    PARAGRAPH = "paragraph"

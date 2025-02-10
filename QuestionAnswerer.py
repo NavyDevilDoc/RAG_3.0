@@ -3,6 +3,7 @@ import time
 import json
 from typing import Dict, List, Optional
 from ResponseSelector import ResponseSelector
+from ResponseFormatter import ResponseFormatter, QAResponse
 from ScoringMetric import ScoringMetric
 import numpy as np
 
@@ -37,7 +38,6 @@ class QuestionAnswerer:
         try:
             with open(self.ground_truth_path, "r") as file:
                 data = json.load(file)
-            #print(f"Ground truth loaded from {self.ground_truth_path}")
             return data
         except Exception as e:
             print(f"Error loading ground truth: {e}")
@@ -51,37 +51,44 @@ class QuestionAnswerer:
         start_time = time.time()
         selector = ResponseSelector(use_reranking=self.use_reranking, save_outputs=self.save_outputs, output_file_path=self.output_file_path)
         scoring_metric = ScoringMetric(self.embedding_model, self.embedding_type)
+        formatter = ResponseFormatter()
 
         for question in questions:
             try:
                 # Use Pinecone's similarity search to retrieve the top k documents
-                retrieved_results = datastore.similarity_search_with_score(query=question, k=20)
+                retrieved_results = datastore.similarity_search_with_score(query=question, k=50)
                 print(f"\n-----Retrieved Results-----")
                 for result in retrieved_results:
                     page_number = result[0].metadata.get('page', 'Unknown')
-                    print(f"Document #{page_number}: {result[0].page_content}... Score: {result[1]}")
+                    print(f"Document #{page_number}: {result[0].page_content[:150]}... Score: {result[1]}")
 
 
                 # Select a percentage scored documents for re-ranking
-                top_percentage = 0.4
+                top_percentage = min(0.4, max(0.2, len(retrieved_results) / 50))  # Dynamic percentage based on result size
                 top_percentage_index = int(np.ceil(len(retrieved_results) * top_percentage))
                 documents_for_reranking = [result[0].page_content for result in retrieved_results[:top_percentage_index]]
 
                 # Re-rank documents
                 reranked_documents = selector.rerank_documents(question, documents_for_reranking)
+
+                min_documents = 10
+                max_documents = 20
+                num_documents = min(max_documents, max(min_documents, int(len(reranked_documents) * 0.15)))
+
                 print(f"\n-----Re-ranked Documents-----")
                 for doc, score in reranked_documents:
                     print(f"Document: {doc[:100]}... Score: {score}")
 
                 # Use top n re-ranked documents to generate responses
-                top_documents = [doc for doc, _ in reranked_documents[:3]]
+                top_documents = [doc for doc, _ in reranked_documents[:num_documents]]
                 print(f"\n-----Top Documents for Response Generation-----")
                 for doc in top_documents:
                     print(f"Document: {doc[:100]}...")
 
-                references = [result[0].metadata.get('source', '') for result in retrieved_results[:3]]
+                #references = [result[0].metadata.get('source', '') for result in retrieved_results[:3]]
 
                 # Generate LLM responses
+                print(f"\n-----Generating Responses-----")
                 responses = [self.chain.invoke({"question": question, "context": top_documents}) for _ in range(self.num_responses)]
 
                 # Select best response and get confidence
@@ -93,11 +100,22 @@ class QuestionAnswerer:
                 expected_answer = self.ground_truth.get(question) if use_ground_truth else None
                 quality_scores = scoring_metric.compute_response_quality_score(best_response, expected_answer)
 
+
+                # Format the response
+                formatted_response = formatter.format_response(
+                    QAResponse(
+                        question=question,
+                        answer=best_response,
+                        confidence=confidence_score,
+                        #references=references
+                    )
+                )
+
                 results.append({
                     'question': question,
-                    'answer': best_response,
+                    'answer': formatted_response,
                     'confidence': confidence_score,
-                    'references': references,
+                    #'references': references,
                     'quality_scores': quality_scores,
                     'processing_time': time.time() - start_time,
                     'ground_truth_used': bool(expected_answer)

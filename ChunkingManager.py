@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from langchain_core.documents import Document
 from SemanticChunker import SemanticChunker
 from PageChunker import PageChunker
+from ParagraphChunker import ParagraphChunker
 from HierarchicalChunker import HierarchicalChunker
 from OCREnhancedPDFLoader import OCREnhancedPDFLoader
 from TextPreprocessor import TextPreprocessor
@@ -40,10 +41,16 @@ def process_document(
                 enable_preprocessing,
                 chunk_size,
                 chunk_overlap,
-                similarity_threshold,
-            )
+                similarity_threshold)
+        
         elif method == ChunkingMethod.PAGE:
             return _page_chunking(source_path, 
+                                  enable_preprocessing, 
+                                  model_name, 
+                                  embedding_model)
+        
+        elif method == ChunkingMethod.PARAGRAPH:
+            return _paragraph_chunking(source_path, 
                                   enable_preprocessing, 
                                   model_name, 
                                   embedding_model)
@@ -56,8 +63,7 @@ def process_document(
                 chunk_overlap,
                 similarity_threshold,
                 model_name,
-                embedding_model
-            )
+                embedding_model)
         else:
             raise ValueError(f"Unsupported chunking method: {method}")
 
@@ -113,6 +119,25 @@ def _page_chunking(
     # Pass the pre-initialized embedding model to PageChunker
     page_chunker = PageChunker(model_name=model_name, embedding_model=embedding_model)
     documents = page_chunker.page_process_document(source_path, preprocess=preprocess)
+    
+    # Report token counts per page
+    print(f"Processed {len(documents)} pages")
+    for doc in documents:
+        print(f"Page {doc.metadata['page']}: {doc.metadata['token_count']} tokens")
+    return documents
+
+def _paragraph_chunking(
+        source_path: str, 
+        preprocess: bool, 
+        model_name: str, 
+        embedding_model: Any
+        ) -> List[Document]:
+
+    """Process document using paragraph-based chunking strategy."""
+    print("Processing document by paragraphs...")
+    # Pass the pre-initialized embedding model to ParagraphChunker
+    paragraph_chunker = ParagraphChunker(model_name=model_name, embedding_model=embedding_model)
+    documents = paragraph_chunker.paragraph_process_document(source_path, preprocess=preprocess)
     
     # Report token counts per page
     print(f"Processed {len(documents)} pages")
